@@ -6,8 +6,8 @@ import 'forge-std/Test.sol';
 import {AaveV3Arbitrum, AaveMisc} from 'aave-address-book/AaveAddressBook.sol';
 import {AaveGovernanceV2, IExecutorWithTimelock} from 'aave-address-book/AaveGovernanceV2.sol';
 
-import {GovHelpers} from '../../src/GovHelpers.sol';
-import {ProtocolV3TestBase, ReserveConfig, ReserveTokens, IERC20} from '../../src/ProtocolV3TestBase.sol';
+import {GovHelpers} from 'aave-helpers/GovHelpers.sol';
+import {ProtocolV3TestBase, ReserveConfig, ReserveTokens, IERC20} from 'aave-helpers/ProtocolV3TestBase.sol';
 
 import {PayloadWithEmit} from './mocks/PayloadWithEmit.sol';
 
