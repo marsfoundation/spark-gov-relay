@@ -9,10 +9,10 @@ import {AaveGovernanceV2, IExecutorWithTimelock} from 'aave-address-book/AaveGov
 import {GovHelpers} from 'aave-helpers/GovHelpers.sol';
 import {ProtocolV3TestBase, ReserveConfig, ReserveTokens, IERC20} from 'aave-helpers/ProtocolV3TestBase.sol';
 
-import {IInbox} from '../src/interfaces/arbitrum/IInbox.sol';
-import {IL2BridgeExecutor} from '../src/interfaces/executors/IL2BridgeExecutor.sol';
+import {IInbox} from '../src/dependencies/arbitrum/interfaces/IInbox.sol';
+import {IL2BridgeExecutor} from '../src/interfaces/IL2BridgeExecutor.sol';
 
-import {AddressAliasHelper} from '../src/dependencies/AddressAliasHelper.sol';
+import {AddressAliasHelper} from '../src/dependencies/arbitrum/AddressAliasHelper.sol';
 import {CrosschainForwarderArbitrum} from '../src/forwarders/CrosschainForwarderArbitrum.sol';
 
 import {PayloadWithEmit} from './mocks/PayloadWithEmit.sol';

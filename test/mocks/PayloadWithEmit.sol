@@ -3,7 +3,7 @@ pragma solidity ^0.8.10;
 
 import {IPoolConfigurator, ConfiguratorInputTypes} from 'aave-address-book/AaveV3.sol';
 
-import {IProposalGenericExecutor} from '../../src/interfaces/executors/IProposalGenericExecutor.sol';
+import {IProposalGenericExecutor} from '../../src/interfaces/IProposalGenericExecutor.sol';
 
 /**
  * @dev This payload simply emits an event on execution
