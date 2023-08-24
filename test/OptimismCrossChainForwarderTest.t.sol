@@ -33,9 +33,9 @@ contract OptimismCrossChainForwarderTest is ProtocolV3TestBase {
   CrosschainForwarderOptimism public forwarder;
 
   function setUp() public {
-    mainnetFork = vm.createSelectFork(vm.rpcUrl('mainnet'), 15783218);
+    mainnetFork = vm.createSelectFork(getChain('mainnet').rpcUrl, 15783218);
     forwarder = new CrosschainForwarderOptimism(OPTIMISM_BRIDGE_EXECUTOR);
-    optimismFork = vm.createSelectFork(vm.rpcUrl('optimism'), 30264427);
+    optimismFork = vm.createSelectFork(getChain('optimism').rpcUrl, 30264427);
     payloadWithEmit = new PayloadWithEmit();
   }
 
