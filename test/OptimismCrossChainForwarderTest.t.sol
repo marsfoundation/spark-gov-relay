@@ -8,11 +8,10 @@ import {AaveGovernanceV2, IExecutorWithTimelock} from 'aave-address-book/AaveGov
 
 import {ProtocolV3TestBase, ReserveConfig, ReserveTokens, IERC20} from 'aave-helpers/ProtocolV3TestBase.sol';
 import {GovHelpers} from 'aave-helpers/GovHelpers.sol';
-
 import {PayloadWithEmit} from './mocks/PayloadWithEmit.sol';
 
-import {AddressAliasHelper} from '../src/dependencies/arbitrum/AddressAliasHelper.sol';
-import {IL2CrossDomainMessenger} from '../src/dependencies/optimism/interfaces/IL2CrossDomainMessenger.sol';
+import {AddressAliasHelper} from '../src/dependencies/AddressAliasHelper.sol';
+import {IL2CrossDomainMessenger} from '../src/interfaces/optimism/IL2CrossDomainMessenger.sol';
 import {CrosschainForwarderOptimism} from '../src/forwarders/CrosschainForwarderOptimism.sol';
 
 /**

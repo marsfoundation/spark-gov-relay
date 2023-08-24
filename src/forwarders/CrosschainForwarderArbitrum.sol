@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IInbox} from '../dependencies/arbitrum/interfaces/IInbox.sol';
-import {IL2BridgeExecutor} from '../interfaces/IL2BridgeExecutor.sol';
+import {IInbox} from '../interfaces/arbitrum/IInbox.sol';
+import {IL2BridgeExecutor} from '../interfaces/executors/IL2BridgeExecutor.sol';
 
 /**
  * @title A generic executor for proposals targeting the arbitrum v3 pool
