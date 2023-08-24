@@ -13,7 +13,7 @@ import {PayloadWithEmit} from './mocks/PayloadWithEmit.sol';
 
 import {AddressAliasHelper} from '../src/dependencies/arbitrum/AddressAliasHelper.sol';
 import {IL2CrossDomainMessenger} from '../src/dependencies/optimism/interfaces/IL2CrossDomainMessenger.sol';
-import {CrosschainForwarderOptimism} from '../src/CrosschainForwarderOptimism.sol';
+import {CrosschainForwarderOptimism} from '../src/forwarders/CrosschainForwarderOptimism.sol';
 
 /**
  * This test covers syncing between mainnet and optimism.

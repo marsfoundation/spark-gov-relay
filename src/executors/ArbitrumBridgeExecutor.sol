@@ -1,34 +1,26 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.10;
 
-import {ICrossDomainMessenger} from './dependencies/optimism/interfaces/ICrossDomainMessenger.sol';
+import {AddressAliasHelper} from '../dependencies/arbitrum/AddressAliasHelper.sol';
 import {L2BridgeExecutor} from './L2BridgeExecutor.sol';
 
 /**
- * @title OptimismBridgeExecutor
+ * @title ArbitrumBridgeExecutor
  * @author Aave
- * @notice Implementation of the Optimism Bridge Executor, able to receive cross-chain transactions from Ethereum
- * @dev Queuing an ActionsSet into this Executor can only be done by the Optimism L2 Cross Domain Messenger and having
- * the EthereumGovernanceExecutor as xDomainMessageSender
+ * @notice Implementation of the Arbitrum Bridge Executor, able to receive cross-chain transactions from Ethereum
+ * @dev Queuing an ActionsSet into this Executor can only be done by the L2 Address Alias of the L1 EthereumGovernanceExecutor
  */
-contract OptimismBridgeExecutor is L2BridgeExecutor {
-  // Address of the Optimism L2 Cross Domain Messenger, in charge of redirecting cross-chain transactions in L2
-  address public immutable OVM_L2_CROSS_DOMAIN_MESSENGER;
-
+contract ArbitrumBridgeExecutor is L2BridgeExecutor {
   /// @inheritdoc L2BridgeExecutor
   modifier onlyEthereumGovernanceExecutor() override {
-    if (
-      msg.sender != OVM_L2_CROSS_DOMAIN_MESSENGER ||
-      ICrossDomainMessenger(OVM_L2_CROSS_DOMAIN_MESSENGER).xDomainMessageSender() !=
-      _ethereumGovernanceExecutor
-    ) revert UnauthorizedEthereumExecutor();
+    if (AddressAliasHelper.undoL1ToL2Alias(msg.sender) != _ethereumGovernanceExecutor)
+      revert UnauthorizedEthereumExecutor();
     _;
   }
 
   /**
    * @dev Constructor
    *
-   * @param ovmL2CrossDomainMessenger The address of the Optimism L2CrossDomainMessenger
    * @param ethereumGovernanceExecutor The address of the EthereumGovernanceExecutor
    * @param delay The delay before which an actions set can be executed
    * @param gracePeriod The time period after a delay during which an actions set can be executed
@@ -37,7 +29,6 @@ contract OptimismBridgeExecutor is L2BridgeExecutor {
    * @param guardian The address of the guardian, which can cancel queued proposals (can be zero)
    */
   constructor(
-    address ovmL2CrossDomainMessenger,
     address ethereumGovernanceExecutor,
     uint256 delay,
     uint256 gracePeriod,
@@ -54,6 +45,6 @@ contract OptimismBridgeExecutor is L2BridgeExecutor {
       guardian
     )
   {
-    OVM_L2_CROSS_DOMAIN_MESSENGER = ovmL2CrossDomainMessenger;
+    // Intentionally left blank
   }
 }

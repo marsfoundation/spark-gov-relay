@@ -14,7 +14,7 @@ import {PayloadWithEmit} from './mocks/PayloadWithEmit.sol';
 import {AddressAliasHelper} from '../src/dependencies/arbitrum/AddressAliasHelper.sol';
 import {IInbox} from '../src/dependencies/arbitrum/interfaces/IInbox.sol';
 import {IL2BridgeExecutor} from '../src/interfaces/IL2BridgeExecutor.sol';
-import {CrosschainForwarderArbitrum} from '../src/CrosschainForwarderArbitrum.sol';
+import {CrosschainForwarderArbitrum} from '../src/forwarders/CrosschainForwarderArbitrum.sol';
 
 /**
  * This test covers syncing between mainnet and arbitrum.

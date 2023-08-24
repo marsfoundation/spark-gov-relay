@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {ICrossDomainMessenger} from './dependencies/optimism/interfaces/ICrossDomainMessenger.sol';
-import {IL2BridgeExecutor} from './interfaces/IL2BridgeExecutor.sol';
+import {ICrossDomainMessenger} from '../dependencies/optimism/interfaces/ICrossDomainMessenger.sol';
+import {IL2BridgeExecutor} from '../interfaces/IL2BridgeExecutor.sol';
 
 interface ICanonicalTransactionChain {
   function enqueueL2GasPrepaid() external view returns (uint256);
