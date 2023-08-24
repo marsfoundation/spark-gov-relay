@@ -6,13 +6,15 @@ import 'forge-std/Test.sol';
 import {AaveV3Optimism, AaveMisc} from 'aave-address-book/AaveAddressBook.sol';
 import {AaveGovernanceV2, IExecutorWithTimelock} from 'aave-address-book/AaveGovernanceV2.sol';
 
-import {ProtocolV3TestBase, ReserveConfig, ReserveTokens, IERC20} from 'aave-helpers/ProtocolV3TestBase.sol';
 import {GovHelpers} from 'aave-helpers/GovHelpers.sol';
-import {PayloadWithEmit} from './mocks/PayloadWithEmit.sol';
+import {ProtocolV3TestBase, ReserveConfig, ReserveTokens, IERC20} from 'aave-helpers/ProtocolV3TestBase.sol';
+
+import {IL2CrossDomainMessenger} from '../src/interfaces/optimism/IL2CrossDomainMessenger.sol';
 
 import {AddressAliasHelper} from '../src/dependencies/AddressAliasHelper.sol';
-import {IL2CrossDomainMessenger} from '../src/interfaces/optimism/IL2CrossDomainMessenger.sol';
 import {CrosschainForwarderOptimism} from '../src/forwarders/CrosschainForwarderOptimism.sol';
+
+import {PayloadWithEmit} from './mocks/PayloadWithEmit.sol';
 
 /**
  * This test covers syncing between mainnet and optimism.

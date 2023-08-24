@@ -2,6 +2,7 @@
 pragma solidity ^0.8.10;
 
 import {ICrossDomainMessenger} from '../interfaces/optimism/ICrossDomainMessenger.sol';
+
 import {L2BridgeExecutor} from '../dependencies/L2BridgeExecutor.sol';
 
 /**
