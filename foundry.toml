@@ -5,7 +5,8 @@ libs = ["lib"]
 remappings = [
     'aave-helpers/=lib/aave-helpers/src/',
     'solidity-utils/=lib/aave-helpers/lib/solidity-utils/src/',
-    'aave-address-book/=lib/aave-helpers/lib/aave-address-book/src'
+    'aave-address-book/=lib/aave-helpers/lib/aave-address-book/src',
+    'xchain-helpers/=lib/xchain-helpers/src/'
 ]
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
