@@ -68,16 +68,6 @@ contract ArbitrumCrosschainTest is Test  {
     function testCrossChainPayloadExecution() public {
         mainnet.selectFork();
 
-        // (uint256 maxSubmission, uint256 maxRedemption) = forwarder.getRequiredGas(encodedPayloadData.length);
-        // (bool hasEnoughGasBefore, ) = forwarder.hasSufficientGasForExecution(L1_EXECUTOR, encodedPayloadData.length);
-        // assertEq(hasEnoughGasBefore, false);
-        // vm.deal(
-        //     L1_EXECUTOR,
-        //     (maxSubmission + maxRedemption)
-        // );
-        // (bool hasEnoughGasAfter, ) = forwarder.hasSufficientGasForExecution(L1_EXECUTOR, encodedPayloadData.length);
-        // assertEq(hasEnoughGasAfter, true);
-
         vm.deal(
             L1_EXECUTOR,
             0.001 ether
