@@ -8,3 +8,6 @@
 	path = lib/xchain-helpers
 	url = https://github.com/marsfoundation/xchain-helpers
 	branch = SC-97-init
+[submodule "lib/spark-spells"]
+	path = lib/spark-spells
+	url = https://github.com/marsfoundation/spark-spells
