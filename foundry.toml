@@ -6,6 +6,7 @@ remappings = [
     'aave-helpers/=lib/aave-helpers/src/',
     'solidity-utils/=lib/aave-helpers/lib/solidity-utils/src/',
     'aave-address-book/=lib/aave-helpers/lib/aave-address-book/src',
+    'spark-spells/=lib/spark-spells/src/',
     'xchain-helpers/=lib/xchain-helpers/src/'
 ]
 

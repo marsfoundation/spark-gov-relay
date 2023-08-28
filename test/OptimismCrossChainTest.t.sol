@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 
-import {ProtocolV3TestBase} from 'aave-helpers/ProtocolV3TestBase.sol';
+import {ProtocolV3TestBase} from 'spark-spells/ProtocolV3TestBase.sol';
 import {OptimismDomain, Domain} from 'xchain-helpers/OptimismDomain.sol';
 
 import {OptimismBridgeExecutor} from '../src/executors/OptimismBridgeExecutor.sol';
@@ -12,7 +12,7 @@ import {CrosschainForwarderOptimism} from '../src/forwarders/CrosschainForwarder
 import {PayloadWithEmit} from './mocks/PayloadWithEmit.sol';
 import {IExecutor} from './interfaces/IExecutor.sol';
 
-contract OptimismCrossTest is ProtocolV3TestBase {
+contract OptimismCrosschainTest is ProtocolV3TestBase {
   event TestEvent();
 
   address public constant OVM_L2_CROSS_DOMAIN_MESSENGER = 0x4200000000000000000000000000000000000007;
@@ -49,7 +49,7 @@ contract OptimismCrossTest is ProtocolV3TestBase {
     forwarder = new CrosschainForwarderOptimism(address(bridgeExecutor));
   }
 
-  function testCrossChainProposalExecution() public {
+  function testCrossChainPayloadExecution() public {
     mainnet.selectFork();
     vm.prank(L1_PAUSE_PROXY);
     IExecutor(L1_EXECUTOR).exec(
@@ -59,7 +59,7 @@ contract OptimismCrossTest is ProtocolV3TestBase {
 
     optimism.relayFromHost(true);
 
-    vm.expectEmit(true, true, true, true);
+    vm.expectEmit(address(bridgeExecutor));
     emit TestEvent();
     bridgeExecutor.execute(0);
   }
