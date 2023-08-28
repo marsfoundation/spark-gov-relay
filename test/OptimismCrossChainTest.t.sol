@@ -10,12 +10,14 @@ import {OptimismBridgeExecutor} from '../src/executors/OptimismBridgeExecutor.so
 import {CrosschainForwarderOptimism} from '../src/forwarders/CrosschainForwarderOptimism.sol';
 
 import {PayloadWithEmit} from './mocks/PayloadWithEmit.sol';
+import {IExecutor} from './interfaces/IExecutor.sol';
 
 contract OptimismCrossTest is ProtocolV3TestBase {
   event TestEvent();
 
   address public constant OVM_L2_CROSS_DOMAIN_MESSENGER = 0x4200000000000000000000000000000000000007;
   address public constant L1_EXECUTOR = 0x3300f198988e4C9C63F75dF86De36421f06af8c4;
+  address public constant L1_PAUSE_PROXY = 0xBE8E3e3618f7474F8cB1d074A26afFef007E98FB;
 
   Domain public mainnet;
   OptimismDomain public optimism;
@@ -48,6 +50,17 @@ contract OptimismCrossTest is ProtocolV3TestBase {
   }
 
   function testCrossChainProposalExecution() public {
+    mainnet.selectFork();
+    vm.prank(L1_PAUSE_PROXY);
+    IExecutor(L1_EXECUTOR).exec(
+        address(forwarder),
+        abi.encodeWithSelector(CrosschainForwarderOptimism.execute.selector, address(payloadWithEmit))
+    );
 
+    optimism.relayFromHost(true);
+
+    vm.expectEmit(true, true, true, true);
+    emit TestEvent();
+    bridgeExecutor.execute(0);
   }
 }
