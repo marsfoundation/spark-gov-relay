@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 
-import { ProtocolV3TestBase } from 'spark-spells/ProtocolV3TestBase.sol';
 import { OptimismDomain, Domain } from 'xchain-helpers/OptimismDomain.sol';
 
 import { OptimismBridgeExecutor } from '../src/executors/OptimismBridgeExecutor.sol';
@@ -12,7 +11,7 @@ import { CrosschainForwarderOptimism } from '../src/forwarders/CrosschainForward
 import { PayloadWithEmit } from './mocks/PayloadWithEmit.sol';
 import { IExecutor } from './interfaces/IExecutor.sol';
 
-contract OptimismCrosschainTest is ProtocolV3TestBase {
+contract OptimismCrosschainTest is Test {
     event TestEvent();
 
     address public constant OVM_L2_CROSS_DOMAIN_MESSENGER = 0x4200000000000000000000000000000000000007;

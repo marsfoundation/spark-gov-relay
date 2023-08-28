@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 
-import { ProtocolV3TestBase } from 'spark-spells/ProtocolV3TestBase.sol';
 import { ArbitrumDomain, Domain } from 'xchain-helpers/ArbitrumDomain.sol';
 
 import { ArbitrumBridgeExecutor } from '../src/executors/ArbitrumBridgeExecutor.sol';
@@ -12,7 +11,7 @@ import { CrosschainForwarderArbitrum } from '../src/forwarders/CrosschainForward
 import { PayloadWithEmit } from './mocks/PayloadWithEmit.sol';
 import { IExecutor } from './interfaces/IExecutor.sol';
 
-contract ArbitrumCrosschainTest is ProtocolV3TestBase {
+contract ArbitrumCrosschainTest is Test  {
     event TestEvent();
 
     address public constant L1_EXECUTOR    = 0x3300f198988e4C9C63F75dF86De36421f06af8c4;
