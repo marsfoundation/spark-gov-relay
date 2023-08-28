@@ -9,6 +9,8 @@ import {OptimismDomain, Domain} from 'xchain-helpers/OptimismDomain.sol';
 import {OptimismBridgeExecutor} from '../src/executors/OptimismBridgeExecutor.sol';
 import {CrosschainForwarderOptimism} from '../src/forwarders/CrosschainForwarderOptimism.sol';
 
+import {PayloadWithEmit} from './mocks/PayloadWithEmit.sol';
+
 contract OptimismCrossTest is ProtocolV3TestBase {
   event TestEvent();
 
@@ -20,6 +22,7 @@ contract OptimismCrossTest is ProtocolV3TestBase {
 
   OptimismBridgeExecutor public bridgeExecutor;
   CrosschainForwarderOptimism public forwarder;
+  PayloadWithEmit public payloadWithEmit;
 
   function setUp() public {
     optimism = new OptimismDomain(
@@ -27,9 +30,7 @@ contract OptimismCrossTest is ProtocolV3TestBase {
         new Domain(getChain('mainnet'))
         );
     mainnet = optimism.hostDomain();
-  }
 
-  function testCrossChainProposalExecution() public {
     optimism.selectFork();
     bridgeExecutor = new OptimismBridgeExecutor(
       OVM_L2_CROSS_DOMAIN_MESSENGER,
@@ -40,8 +41,13 @@ contract OptimismCrossTest is ProtocolV3TestBase {
       1_000,
       address(0)
     );
+    payloadWithEmit = new PayloadWithEmit();
 
     mainnet.selectFork();
     forwarder = new CrosschainForwarderOptimism(address(bridgeExecutor));
+  }
+
+  function testCrossChainProposalExecution() public {
+
   }
 }
