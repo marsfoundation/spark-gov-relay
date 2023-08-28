@@ -25,6 +25,7 @@ contract OptimismCrosschainTest is ProtocolV3TestBase {
     OptimismBridgeExecutor public bridgeExecutor;
     CrosschainForwarderOptimism public forwarder;
     PayloadWithEmit public payloadWithEmit;
+
     bytes public encodedPayloadData;
 
     function setUp() public {

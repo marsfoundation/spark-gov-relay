@@ -24,6 +24,7 @@ contract ArbitrumCrosschainTest is ProtocolV3TestBase {
     ArbitrumBridgeExecutor public bridgeExecutor;
     CrosschainForwarderArbitrum public forwarder;
     PayloadWithEmit public payloadWithEmit;
+
     bytes public encodedPayloadData;
 
     function setUp() public {
