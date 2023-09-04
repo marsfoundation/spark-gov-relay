@@ -33,10 +33,10 @@ abstract contract CrosschainTestBase is Test  {
 
     L2BridgeExecutorArguments public defaultL2BridgeExecutorArgs = L2BridgeExecutorArguments({
         ethereumGovernanceExecutor: L1_EXECUTOR,
-        delay:                      7 days,
-        gracePeriod:                3 days,
+        delay:                      600,
+        gracePeriod:                1200,
         minimumDelay:               0,
-        maximumDelay:               30 days,
+        maximumDelay:               2400,
         guardian:                   GUARDIAN
     });
 
@@ -46,7 +46,10 @@ abstract contract CrosschainTestBase is Test  {
     address public forwarder;
     address public bridgeExecutor;
 
-    function testSimpleCrosschainPayloadExecution() public {
+    function testSimpleCrosschainPayloadExecution(uint256 delay) public {
+        vm.assume(delay > defaultL2BridgeExecutorArgs.delay);
+        vm.assume(delay < (defaultL2BridgeExecutorArgs.delay + defaultL2BridgeExecutorArgs.gracePeriod));
+
         bridgedDomain.selectFork();
 
         bytes memory encodedPayloadData = abi.encodeWithSelector(
@@ -64,7 +67,7 @@ abstract contract CrosschainTestBase is Test  {
 
         bridgedDomain.relayFromHost(true);
 
-        skip(defaultL2BridgeExecutorArgs.delay + 1);
+        skip(delay);
 
         vm.expectEmit(bridgeExecutor);
         emit TestEvent();
