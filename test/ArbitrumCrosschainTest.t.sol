@@ -18,12 +18,12 @@ contract ArbitrumCrosschainTest is CrosschainTestBase  {
 
         bridgedDomain.selectFork();
         bridgeExecutor = address(new ArbitrumBridgeExecutor(
-            L1_EXECUTOR,
-            0,
-            1_000,
-            0,
-            1_000,
-            address(0)
+            defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
+            defaultL2BridgeExecutorArgs.delay,
+            defaultL2BridgeExecutorArgs.gracePeriod,
+            defaultL2BridgeExecutorArgs.minimumDelay,
+            defaultL2BridgeExecutorArgs.maximumDelay,
+            defaultL2BridgeExecutorArgs.guardian
         ));
 
         hostDomain.selectFork();

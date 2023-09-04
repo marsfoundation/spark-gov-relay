@@ -21,12 +21,12 @@ contract OptimismCrosschainTest is CrosschainTestBase {
         bridgedDomain.selectFork();
         bridgeExecutor = address(new OptimismBridgeExecutor(
             OVM_L2_CROSS_DOMAIN_MESSENGER,
-            L1_EXECUTOR,
-            0,
-            1_000,
-            0,
-            1_000,
-            address(0)
+            defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
+            defaultL2BridgeExecutorArgs.delay,
+            defaultL2BridgeExecutorArgs.gracePeriod,
+            defaultL2BridgeExecutorArgs.minimumDelay,
+            defaultL2BridgeExecutorArgs.maximumDelay,
+            defaultL2BridgeExecutorArgs.guardian
         ));
 
         hostDomain.selectFork();

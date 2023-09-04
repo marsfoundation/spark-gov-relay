@@ -15,11 +15,30 @@ interface IBaseCrossschainForwarder {
   function execute(address l2PayloadContract) external;
 }
 
+struct L2BridgeExecutorArguments {
+    address ethereumGovernanceExecutor;
+    uint256 delay;
+    uint256 gracePeriod;
+    uint256 minimumDelay;
+    uint256 maximumDelay;
+    address guardian;
+}
+
 abstract contract CrosschainTestBase is Test  {
     event TestEvent();
 
     address public constant L1_EXECUTOR    = 0x3300f198988e4C9C63F75dF86De36421f06af8c4;
     address public constant L1_PAUSE_PROXY = 0xBE8E3e3618f7474F8cB1d074A26afFef007E98FB;
+    address public constant GUARDIAN       = 0x474E6f886fE829Fd5F289C5B681DdE09ab207076;
+
+    L2BridgeExecutorArguments public defaultL2BridgeExecutorArgs = L2BridgeExecutorArguments({
+        ethereumGovernanceExecutor: L1_EXECUTOR,
+        delay:                      7 days,
+        gracePeriod:                3 days,
+        minimumDelay:               0,
+        maximumDelay:               30 days,
+        guardian:                   GUARDIAN
+    });
 
     Domain public hostDomain;
     BridgedDomain public bridgedDomain;
@@ -45,8 +64,29 @@ abstract contract CrosschainTestBase is Test  {
 
         bridgedDomain.relayFromHost(true);
 
+        skip(defaultL2BridgeExecutorArgs.delay + 1);
+
         vm.expectEmit(bridgeExecutor);
         emit TestEvent();
         IL2BridgeExecutor(bridgeExecutor).execute(0);
     }
 }
+
+
+// TODO:
+// EXECUTE
+// 1. Test execution fail before the timelock finishes
+// 2. Test execution failure when nothing is queued or exeuction of non-existent proposal
+// 3. Test event ActionsSetExecuted
+// CANCLE
+// 1. Test non-existent proposal cant be canceled
+// 2. Test non-gueardian address cant cancel
+// 3. Test that you cannot execute after proposal is canceled
+// UPDATE
+// 1. - X. Test all the setters / updaters
+// RANDOM
+// Test isActionQueued
+// Test queuing multiple calls
+// Test queueing multiple calls and executing multiple calls
+
+
