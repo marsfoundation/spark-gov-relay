@@ -8,34 +8,25 @@ import { OptimismDomain, Domain } from 'xchain-helpers/OptimismDomain.sol';
 import { OptimismBridgeExecutor } from '../src/executors/OptimismBridgeExecutor.sol';
 import { CrosschainForwarderOptimism } from '../src/forwarders/CrosschainForwarderOptimism.sol';
 
-import { PayloadWithEmit } from './mocks/PayloadWithEmit.sol';
-import { IExecutor } from './interfaces/IExecutor.sol';
+import { CrosschainTestBase } from './CrosschainTestBase.sol';
 
-contract OptimismCrosschainTest is Test {
-    event TestEvent();
-
-    address public constant OVM_L2_CROSS_DOMAIN_MESSENGER = 0x4200000000000000000000000000000000000007;
-    address public constant L1_EXECUTOR                   = 0x3300f198988e4C9C63F75dF86De36421f06af8c4;
-    address public constant L1_PAUSE_PROXY                = 0xBE8E3e3618f7474F8cB1d074A26afFef007E98FB;
-
-    Domain public mainnet;
+contract OptimismCrosschainTest is CrosschainTestBase {
     OptimismDomain public optimism;
 
-    OptimismBridgeExecutor public bridgeExecutor;
-    CrosschainForwarderOptimism public forwarder;
-    PayloadWithEmit public payloadWithEmit;
+    OptimismBridgeExecutor public optimismBridgeExecutor;
+    CrosschainForwarderOptimism public optimismForwarder;
 
-    bytes public encodedPayloadData;
+    address public constant OVM_L2_CROSS_DOMAIN_MESSENGER = 0x4200000000000000000000000000000000000007;
 
     function setUp() public {
+        mainnet = new Domain(getChain('mainnet'));
         optimism = new OptimismDomain(
             getChain('optimism'),
-            new Domain(getChain('mainnet'))
+            mainnet
             );
-        mainnet = optimism.hostDomain();
 
         optimism.selectFork();
-        bridgeExecutor = new OptimismBridgeExecutor(
+        optimismBridgeExecutor = new OptimismBridgeExecutor(
             OVM_L2_CROSS_DOMAIN_MESSENGER,
             L1_EXECUTOR,
             0,
@@ -44,30 +35,17 @@ contract OptimismCrosschainTest is Test {
             1_000,
             address(0)
         );
-        payloadWithEmit = new PayloadWithEmit();
 
         mainnet.selectFork();
-        forwarder = new CrosschainForwarderOptimism(address(bridgeExecutor));
-
-        encodedPayloadData = abi.encodeWithSelector(
-            CrosschainForwarderOptimism.execute.selector,
-            address(payloadWithEmit)
-        );
+        optimismForwarder = new CrosschainForwarderOptimism(address(optimismBridgeExecutor));
     }
 
-    function testCrossChainPayloadExecution() public {
-        mainnet.selectFork();
-
-        vm.prank(L1_PAUSE_PROXY);
-        IExecutor(L1_EXECUTOR).exec(
-            address(forwarder),
-            encodedPayloadData
+    function testOptimismCrossChainPayloadExecution() public {
+        checkCrosschainPayloadExecution(
+            mainnet,
+            optimism,
+            address(optimismForwarder),
+            address(optimismBridgeExecutor)
         );
-
-        optimism.relayFromHost(true);
-
-        vm.expectEmit(address(bridgeExecutor));
-        emit TestEvent();
-        bridgeExecutor.execute(0);
     }
 }
