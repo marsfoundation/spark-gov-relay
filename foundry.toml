@@ -2,8 +2,3 @@
 src = "src"
 out = "out"
 libs = ["lib"]
-remappings = [
-    'xchain-helpers/=lib/xchain-helpers/src/'
-]
-
-# See more config options https://github.com/foundry-rs/foundry/tree/master/config
