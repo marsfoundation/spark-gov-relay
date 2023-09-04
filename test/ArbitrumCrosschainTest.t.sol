@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 
-import { ArbitrumDomain, Domain } from 'xchain-helpers/ArbitrumDomain.sol';
+import { Domain, ArbitrumDomain } from 'xchain-helpers/ArbitrumDomain.sol';
 
 import { ArbitrumBridgeExecutor } from '../src/executors/ArbitrumBridgeExecutor.sol';
 import { CrosschainForwarderArbitrum } from '../src/forwarders/CrosschainForwarderArbitrum.sol';
@@ -11,44 +11,26 @@ import { CrosschainForwarderArbitrum } from '../src/forwarders/CrosschainForward
 import { CrosschainTestBase } from './CrosschainTestBase.sol';
 
 contract ArbitrumCrosschainTest is CrosschainTestBase  {
-    ArbitrumDomain public arbitrum;
-
-    ArbitrumBridgeExecutor public arbitrumBridgeExecutor;
-    CrosschainForwarderArbitrum public arbitrumForwarder;
 
     function setUp() public {
-        mainnet = new Domain(getChain('mainnet'));
-        arbitrum = new ArbitrumDomain(
-            getChain('arbitrum_one'),
-            mainnet
-        );
+        hostDomain = new Domain(getChain('mainnet'));
+        bridgedDomain = new ArbitrumDomain(getChain('arbitrum_one'), hostDomain);
 
-        arbitrum.selectFork();
-        arbitrumBridgeExecutor = new ArbitrumBridgeExecutor(
+        bridgedDomain.selectFork();
+        bridgeExecutor = address(new ArbitrumBridgeExecutor(
             L1_EXECUTOR,
             0,
             1_000,
             0,
             1_000,
             address(0)
-        );
+        ));
 
-        mainnet.selectFork();
-        arbitrumForwarder = new CrosschainForwarderArbitrum(address(arbitrumBridgeExecutor));
-    }
-
-    function testArbitrumCrossChainPayloadExecution() public {
-        mainnet.selectFork();
+        hostDomain.selectFork();
+        forwarder = address(new CrosschainForwarderArbitrum(bridgeExecutor));
         vm.deal(
             L1_EXECUTOR,
             0.001 ether
-        );
-
-        checkCrosschainPayloadExecution(
-            mainnet,
-            arbitrum,
-            address(arbitrumForwarder),
-            address(arbitrumBridgeExecutor)
         );
     }
 
@@ -56,14 +38,17 @@ contract ArbitrumCrosschainTest is CrosschainTestBase  {
         vm.assume(paylodDataLength >= 256);
         vm.assume(paylodDataLength <= 1024);
 
-        mainnet.selectFork();
+        hostDomain.selectFork();
 
+        vm.deal(L1_EXECUTOR, 0);
         assertEq(L1_EXECUTOR.balance, 0);
-        (bool hasEnoughGasBefore, uint256 requiredGas) = arbitrumForwarder.hasSufficientGasForExecution(L1_EXECUTOR, paylodDataLength);
+        (bool hasEnoughGasBefore, uint256 requiredGas) = CrosschainForwarderArbitrum(forwarder)
+            .hasSufficientGasForExecution(L1_EXECUTOR, paylodDataLength);
         assertEq(hasEnoughGasBefore, false);
 
-        vm.deal(address(L1_EXECUTOR), requiredGas);
-        (bool hasEnoughGasAfter, ) = arbitrumForwarder.hasSufficientGasForExecution(L1_EXECUTOR, paylodDataLength);
+        vm.deal(L1_EXECUTOR, requiredGas);
+        (bool hasEnoughGasAfter, ) = CrosschainForwarderArbitrum(forwarder)
+            .hasSufficientGasForExecution(L1_EXECUTOR, paylodDataLength);
         assertEq(hasEnoughGasAfter, true);
     }
 }

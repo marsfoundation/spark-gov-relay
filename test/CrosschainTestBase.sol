@@ -15,20 +15,19 @@ interface IBaseCrossschainForwarder {
   function execute(address l2PayloadContract) external;
 }
 
-contract CrosschainTestBase is Test  {
+abstract contract CrosschainTestBase is Test  {
     event TestEvent();
 
     address public constant L1_EXECUTOR    = 0x3300f198988e4C9C63F75dF86De36421f06af8c4;
     address public constant L1_PAUSE_PROXY = 0xBE8E3e3618f7474F8cB1d074A26afFef007E98FB;
 
-    Domain public mainnet;
+    Domain public hostDomain;
+    BridgedDomain public bridgedDomain;
 
-    function checkCrosschainPayloadExecution(
-        Domain hostDomain,
-        BridgedDomain bridgedDomain,
-        address forwarder,
-        address bridgeExecutor
-    ) public {
+    address public forwarder;
+    address public bridgeExecutor;
+
+    function testSimpleCrosschainPayloadExecution() public {
         bridgedDomain.selectFork();
 
         bytes memory encodedPayloadData = abi.encodeWithSelector(
