@@ -141,7 +141,6 @@ abstract contract CrosschainTestBase is Test  {
     function testCanceledActionCannotBeCanceled() public {
         preparePayloadExecution();
 
-
         vm.prank(defaultL2BridgeExecutorArgs.guardian);
         IL2BridgeExecutor(bridgeExecutor).cancel(0);
 
