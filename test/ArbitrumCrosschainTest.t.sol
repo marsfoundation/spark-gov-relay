@@ -30,7 +30,7 @@ contract ArbitrumCrosschainTest is CrosschainTestBase  {
         forwarder = address(new CrosschainForwarderArbitrum(bridgeExecutor));
         vm.deal(
             L1_EXECUTOR,
-            0.001 ether
+            0.01 ether
         );
     }
 
