@@ -76,20 +76,3 @@ abstract contract CrosschainTestBase is Test  {
 }
 
 
-// TODO:
-// EXECUTE
-// 1. Test execution fail before the timelock finishes
-// 2. Test execution failure when nothing is queued or exeuction of non-existent proposal
-// 3. Test event ActionsSetExecuted
-// CANCLE
-// 1. Test non-existent proposal cant be canceled
-// 2. Test non-gueardian address cant cancel
-// 3. Test that you cannot execute after proposal is canceled
-// UPDATE
-// 1. - X. Test all the setters / updaters
-// RANDOM
-// Test isActionQueued
-// Test queuing multiple calls
-// Test queueing multiple calls and executing multiple calls
-
-
