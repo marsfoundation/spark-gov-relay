@@ -6,7 +6,7 @@ import 'forge-std/Test.sol';
 import { Domain } from 'xchain-helpers/Domain.sol';
 import { BridgedDomain } from 'xchain-helpers/BridgedDomain.sol';
 
-import { IL2BridgeExecutor } from '../src/interfaces/IL2BridgeExecutor.sol';
+import { IL2BridgeExecutor, IExecutorBase } from '../src/interfaces/IL2BridgeExecutor.sol';
 
 import { PayloadWithEmit } from './mocks/PayloadWithEmit.sol';
 import { IExecutor } from './interfaces/IExecutor.sol';
@@ -46,10 +46,7 @@ abstract contract CrosschainTestBase is Test  {
     address public forwarder;
     address public bridgeExecutor;
 
-    function testSimpleCrosschainPayloadExecution(uint256 delay) public {
-        vm.assume(delay > defaultL2BridgeExecutorArgs.delay);
-        vm.assume(delay < (defaultL2BridgeExecutorArgs.delay + defaultL2BridgeExecutorArgs.gracePeriod));
-
+    function preparePayloadExecution() public {
         bridgedDomain.selectFork();
 
         bytes memory encodedPayloadData = abi.encodeWithSelector(
@@ -66,6 +63,13 @@ abstract contract CrosschainTestBase is Test  {
         );
 
         bridgedDomain.relayFromHost(true);
+    }
+
+    function testSimpleCrosschainPayloadExecution(uint256 delay) public {
+        vm.assume(delay > defaultL2BridgeExecutorArgs.delay);
+        vm.assume(delay < (defaultL2BridgeExecutorArgs.delay + defaultL2BridgeExecutorArgs.gracePeriod));
+
+        preparePayloadExecution();
 
         skip(delay);
 
@@ -73,6 +77,62 @@ abstract contract CrosschainTestBase is Test  {
         emit TestEvent();
         IL2BridgeExecutor(bridgeExecutor).execute(0);
     }
+
+    function testPayloadExecutionFailsAfterGracePeriod(uint delay) public {
+        vm.assume(delay < 10_000_000);
+        vm.assume(delay > (defaultL2BridgeExecutorArgs.delay + defaultL2BridgeExecutorArgs.gracePeriod));
+
+        preparePayloadExecution();
+
+        skip(delay);
+
+        vm.expectRevert(IExecutorBase.OnlyQueuedActions.selector);
+        IL2BridgeExecutor(bridgeExecutor).execute(0);
+    }
+
+    function testPayloadExecutionFailsBeforeTimelock(uint delay) public {
+        vm.assume(delay < defaultL2BridgeExecutorArgs.delay);
+
+        preparePayloadExecution();
+
+        skip(delay);
+
+        vm.expectRevert(IExecutorBase.TimelockNotFinished.selector);
+        IL2BridgeExecutor(bridgeExecutor).execute(0);
+    }
+
+    function testNonExistentPayloadExecutionFails() public {
+        vm.expectRevert();
+        IL2BridgeExecutor(bridgeExecutor).execute(0);
+
+        preparePayloadExecution();
+
+        skip(defaultL2BridgeExecutorArgs.delay);
+
+        vm.expectRevert();
+        IL2BridgeExecutor(bridgeExecutor).execute(1);
+
+        vm.expectEmit(bridgeExecutor);
+        emit TestEvent();
+        IL2BridgeExecutor(bridgeExecutor).execute(0);
+    }
+
+    function testOnlyGuardianCanCancel() public {
+        address notGuardian = 0x17B23Be942458E6EfC17F000976A490EC428f49A;
+
+        preparePayloadExecution();
+
+        assertEq(IL2BridgeExecutor(bridgeExecutor).getActionsSetById(0).canceled, false);
+
+        vm.expectRevert();
+        vm.prank(notGuardian);
+        IL2BridgeExecutor(bridgeExecutor).cancel(0);
+
+        assertEq(IL2BridgeExecutor(bridgeExecutor).getActionsSetById(0).canceled, false);
+
+        vm.prank(defaultL2BridgeExecutorArgs.guardian);
+        IL2BridgeExecutor(bridgeExecutor).cancel(0);
+
+        assertEq(IL2BridgeExecutor(bridgeExecutor).getActionsSetById(0).canceled, true);
+    }
 }
-
-
