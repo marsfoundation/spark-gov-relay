@@ -65,7 +65,7 @@ abstract contract CrosschainTestBase is Test  {
         bridgedDomain.relayFromHost(true);
     }
 
-    function testSimpleCrosschainPayloadExecution(uint256 delay) public {
+    function testBasicCrosschainPayloadExecution(uint256 delay) public {
         vm.assume(delay > defaultL2BridgeExecutorArgs.delay);
         vm.assume(delay < (defaultL2BridgeExecutorArgs.delay + defaultL2BridgeExecutorArgs.gracePeriod));
 
@@ -78,7 +78,7 @@ abstract contract CrosschainTestBase is Test  {
         IL2BridgeExecutor(bridgeExecutor).execute(0);
     }
 
-    function testPayloadExecutionFailsAfterGracePeriod(uint delay) public {
+    function testActionExecutionFailsAfterGracePeriod(uint delay) public {
         vm.assume(delay < 10_000_000);
         vm.assume(delay > (defaultL2BridgeExecutorArgs.delay + defaultL2BridgeExecutorArgs.gracePeriod));
 
@@ -90,7 +90,7 @@ abstract contract CrosschainTestBase is Test  {
         IL2BridgeExecutor(bridgeExecutor).execute(0);
     }
 
-    function testPayloadExecutionFailsBeforeTimelock(uint delay) public {
+    function testActionxecutionFailsBeforeTimelock(uint delay) public {
         vm.assume(delay < defaultL2BridgeExecutorArgs.delay);
 
         preparePayloadExecution();
@@ -101,7 +101,7 @@ abstract contract CrosschainTestBase is Test  {
         IL2BridgeExecutor(bridgeExecutor).execute(0);
     }
 
-    function testNonExistentPayloadExecutionFails() public {
+    function testNonExistentActionExecutionFails() public {
         vm.expectRevert();
         IL2BridgeExecutor(bridgeExecutor).execute(0);
 
@@ -134,5 +134,51 @@ abstract contract CrosschainTestBase is Test  {
         IL2BridgeExecutor(bridgeExecutor).cancel(0);
 
         assertEq(IL2BridgeExecutor(bridgeExecutor).getActionsSetById(0).canceled, true);
+    }
+
+    function testCanceledActionCannotBeCanceled() public {
+        preparePayloadExecution();
+
+
+        vm.prank(defaultL2BridgeExecutorArgs.guardian);
+        IL2BridgeExecutor(bridgeExecutor).cancel(0);
+
+        vm.expectRevert(IExecutorBase.OnlyQueuedActions.selector);
+        vm.prank(defaultL2BridgeExecutorArgs.guardian);
+        IL2BridgeExecutor(bridgeExecutor).cancel(0);
+    }
+
+    function testExecutedActionCannotBeCanceled() public {
+        preparePayloadExecution();
+
+        skip(defaultL2BridgeExecutorArgs.delay);
+
+        IL2BridgeExecutor(bridgeExecutor).execute(0);
+
+        vm.expectRevert(IExecutorBase.OnlyQueuedActions.selector);
+        vm.prank(defaultL2BridgeExecutorArgs.guardian);
+        IL2BridgeExecutor(bridgeExecutor).cancel(0);
+    }
+
+    function testExpiredActionCannotBeCanceled() public {
+        preparePayloadExecution();
+
+        skip(defaultL2BridgeExecutorArgs.delay + defaultL2BridgeExecutorArgs.gracePeriod + 1);
+
+        vm.expectRevert(IExecutorBase.OnlyQueuedActions.selector);
+        vm.prank(defaultL2BridgeExecutorArgs.guardian);
+        IL2BridgeExecutor(bridgeExecutor).cancel(0);
+    }
+
+    function testCanceledActionCannotBeExecuted() public {
+        preparePayloadExecution();
+
+        skip(defaultL2BridgeExecutorArgs.delay);
+
+        vm.prank(defaultL2BridgeExecutorArgs.guardian);
+        IL2BridgeExecutor(bridgeExecutor).cancel(0);
+
+        vm.expectRevert(IExecutorBase.OnlyQueuedActions.selector);
+        IL2BridgeExecutor(bridgeExecutor).execute(0);
     }
 }
