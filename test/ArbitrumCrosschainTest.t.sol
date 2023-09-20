@@ -35,8 +35,11 @@ contract ArbitrumCrosschainTest is CrosschainTestBase  {
     }
 
     function test_arbitrumGasCalculations(uint256 paylodDataLength) public {
-        vm.assume(paylodDataLength >= 256);
-        vm.assume(paylodDataLength <= 1024);
+        paylodDataLength = bound(
+            paylodDataLength,
+            256,
+            1024
+        );
 
         hostDomain.selectFork();
 

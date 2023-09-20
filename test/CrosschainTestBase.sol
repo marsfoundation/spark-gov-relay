@@ -68,8 +68,11 @@ abstract contract CrosschainTestBase is Test  {
     }
 
     function testFuzz_basicCrosschainPayloadExecution(uint256 delay) public {
-        vm.assume(delay > defaultL2BridgeExecutorArgs.delay);
-        vm.assume(delay < (defaultL2BridgeExecutorArgs.delay + defaultL2BridgeExecutorArgs.gracePeriod));
+        delay = bound(
+            delay,
+            defaultL2BridgeExecutorArgs.delay,
+            defaultL2BridgeExecutorArgs.delay + defaultL2BridgeExecutorArgs.gracePeriod
+        );
 
         preparePayloadExecution();
 
@@ -81,8 +84,11 @@ abstract contract CrosschainTestBase is Test  {
     }
 
     function testFuzz_actionExecutionFailsAfterGracePeriod(uint delay) public {
-        vm.assume(delay < 10_000_000);
-        vm.assume(delay > (defaultL2BridgeExecutorArgs.delay + defaultL2BridgeExecutorArgs.gracePeriod));
+        delay = bound(
+            delay,
+            defaultL2BridgeExecutorArgs.delay + defaultL2BridgeExecutorArgs.gracePeriod + 1,
+            10_000_000
+        );
 
         preparePayloadExecution();
 
@@ -93,7 +99,11 @@ abstract contract CrosschainTestBase is Test  {
     }
 
     function testFuzz_actionxecutionFailsBeforeTimelock(uint delay) public {
-        vm.assume(delay < defaultL2BridgeExecutorArgs.delay);
+        delay = bound(
+            delay,
+            0,
+            defaultL2BridgeExecutorArgs.delay - 1
+        );
 
         preparePayloadExecution();
 
