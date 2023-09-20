@@ -33,7 +33,7 @@ contract ReconfigurationPayload {
     }
 
     function getNewGuardian() public pure returns (address) {
-        return 0x3300f198988e4C9C63F75dF86De36421f06af8c4;
+        return 0xDEAdFAce00000000000000000000000000000009; // mock address of a new guardian
     }
 
 
