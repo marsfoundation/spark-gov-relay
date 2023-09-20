@@ -13,7 +13,7 @@ import { PayloadWithEmit } from './mocks/PayloadWithEmit.sol';
 import { ReconfigurationPayload } from './mocks/ReconfigurationPayload.sol';
 import { IExecutor } from './interfaces/IExecutor.sol';
 
-interface IBaseCrossschainForwarder {
+interface IBaseCrosschainForwarder {
   function execute(address l2PayloadContract) external;
 }
 
@@ -31,7 +31,7 @@ abstract contract CrosschainTestBase is Test  {
 
     address public constant L1_EXECUTOR    = 0x3300f198988e4C9C63F75dF86De36421f06af8c4;
     address public constant L1_PAUSE_PROXY = 0xBE8E3e3618f7474F8cB1d074A26afFef007E98FB;
-    address public constant GUARDIAN       = 0x474E6f886fE829Fd5F289C5B681DdE09ab207076;
+    address public GUARDIAN                = makeAddr("guardian");
 
     L2BridgeExecutorArguments public defaultL2BridgeExecutorArgs = L2BridgeExecutorArguments({
         ethereumGovernanceExecutor: L1_EXECUTOR,
@@ -52,7 +52,7 @@ abstract contract CrosschainTestBase is Test  {
         bridgedDomain.selectFork();
 
         bytes memory encodedPayloadData = abi.encodeWithSelector(
-            IBaseCrossschainForwarder.execute.selector,
+            IBaseCrosschainForwarder.execute.selector,
             address(new PayloadWithEmit())
         );
 
@@ -120,7 +120,7 @@ abstract contract CrosschainTestBase is Test  {
     }
 
     function test_onlyGuardianCanCancel() public {
-        address notGuardian = 0x17B23Be942458E6EfC17F000976A490EC428f49A;
+        address notGuardian = makeAddr("notGuardian");
 
         preparePayloadExecution();
 
@@ -239,12 +239,10 @@ abstract contract CrosschainTestBase is Test  {
             defaultL2BridgeExecutorArgs.guardian
         );
 
-        bridgedDomain.selectFork();
-
         ReconfigurationPayload reconfigurationPayload = new ReconfigurationPayload();
 
         bytes memory encodedPayloadData = abi.encodeWithSelector(
-            IBaseCrossschainForwarder.execute.selector,
+            IBaseCrosschainForwarder.execute.selector,
             address(reconfigurationPayload)
         );
 
