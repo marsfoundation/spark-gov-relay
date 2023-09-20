@@ -249,7 +249,22 @@ abstract contract CrosschainTestBase is Test  {
             defaultL2BridgeExecutorArgs.guardian
         );
 
-        ReconfigurationPayload reconfigurationPayload = new ReconfigurationPayload(makeAddr("newGuardian"));
+        L2BridgeExecutorArguments memory newL2BridgeExecutorParams = L2BridgeExecutorArguments({
+                ethereumGovernanceExecutor: defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
+                delay:                      1200,
+                gracePeriod:                1800,
+                minimumDelay:               100,
+                maximumDelay:               3600,
+                guardian:                   makeAddr("newGuardian")
+            });
+
+        ReconfigurationPayload reconfigurationPayload = new ReconfigurationPayload(
+            newL2BridgeExecutorParams.delay,
+            newL2BridgeExecutorParams.gracePeriod,
+            newL2BridgeExecutorParams.minimumDelay,
+            newL2BridgeExecutorParams.maximumDelay,
+            newL2BridgeExecutorParams.guardian
+        );
 
         bytes memory encodedPayloadData = abi.encodeWithSelector(
             IBaseCrosschainForwarder.execute.selector,
@@ -272,23 +287,23 @@ abstract contract CrosschainTestBase is Test  {
 
         assertEq(
             IL2BridgeExecutor(bridgeExecutor).getDelay(),
-            reconfigurationPayload.getNewDelay()
+            newL2BridgeExecutorParams.delay
         );
         assertEq(
             IL2BridgeExecutor(bridgeExecutor).getGracePeriod(),
-            reconfigurationPayload.getNewGracePeriod()
+            newL2BridgeExecutorParams.gracePeriod
         );
         assertEq(
             IL2BridgeExecutor(bridgeExecutor).getMinimumDelay(),
-            reconfigurationPayload.getNewMinimumDelay()
+            newL2BridgeExecutorParams.minimumDelay
         );
         assertEq(
             IL2BridgeExecutor(bridgeExecutor).getMaximumDelay(),
-            reconfigurationPayload.getNewMaximumDelay()
+            newL2BridgeExecutorParams.maximumDelay
         );
         assertEq(
             IL2BridgeExecutor(bridgeExecutor).getGuardian(),
-            reconfigurationPayload.getNewGuardian()
+            newL2BridgeExecutorParams.guardian
         );
     }
 }

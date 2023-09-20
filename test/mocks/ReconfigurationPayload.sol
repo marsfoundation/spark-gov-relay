@@ -8,10 +8,24 @@ import { IExecutorBase } from '../../src/interfaces/IExecutorBase.sol';
  */
 contract ReconfigurationPayload {
 
+    uint256 public immutable newDelay;
+    uint256 public immutable newGracePeriod;
+    uint256 public immutable newMinimumDelay;
+    uint256 public immutable newMaximumDelay;
     address public immutable newGuardian;
 
-    constructor(address _newGuardian) {
-        newGuardian = _newGuardian;
+    constructor(
+        uint256 _newDelay,
+        uint256 _newGracePeriod,
+        uint256 _newMinimumDelay,
+        uint256 _newMaximumDelay,
+        address _newGuardian
+    ) {
+        newDelay =        _newDelay;
+        newGracePeriod =  _newGracePeriod;
+        newMinimumDelay = _newMinimumDelay;
+        newMaximumDelay = _newMaximumDelay;
+        newGuardian =     _newGuardian;
     }
 
     function execute() external {
@@ -22,20 +36,20 @@ contract ReconfigurationPayload {
         IExecutorBase(address(this)).updateGuardian(getNewGuardian());
     }
 
-    function getNewDelay() public pure returns (uint256) {
-        return 1200;
+    function getNewDelay() public view returns (uint256) {
+        return newDelay;
     }
 
-    function getNewGracePeriod() public pure returns (uint256) {
-        return 1800;
+    function getNewGracePeriod() public view returns (uint256) {
+        return newGracePeriod;
     }
 
-    function getNewMinimumDelay() public pure returns (uint256) {
-        return 100;
+    function getNewMinimumDelay() public view returns (uint256) {
+        return newMinimumDelay;
     }
 
-    function getNewMaximumDelay() public pure returns (uint256) {
-        return 3600;
+    function getNewMaximumDelay() public view returns (uint256) {
+        return newMaximumDelay;
     }
 
     function getNewGuardian() public view returns (address) {
