@@ -249,7 +249,7 @@ abstract contract CrosschainTestBase is Test  {
             defaultL2BridgeExecutorArgs.guardian
         );
 
-        ReconfigurationPayload reconfigurationPayload = new ReconfigurationPayload();
+        ReconfigurationPayload reconfigurationPayload = new ReconfigurationPayload(makeAddr("newGuardian"));
 
         bytes memory encodedPayloadData = abi.encodeWithSelector(
             IBaseCrosschainForwarder.execute.selector,

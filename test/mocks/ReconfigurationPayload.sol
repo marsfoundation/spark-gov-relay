@@ -8,6 +8,12 @@ import { IExecutorBase } from '../../src/interfaces/IExecutorBase.sol';
  */
 contract ReconfigurationPayload {
 
+    address public immutable newGuardian;
+
+    constructor(address _newGuardian) {
+        newGuardian = _newGuardian;
+    }
+
     function execute() external {
         IExecutorBase(address(this)).updateDelay(getNewDelay());
         IExecutorBase(address(this)).updateGracePeriod(getNewGracePeriod());
@@ -32,8 +38,8 @@ contract ReconfigurationPayload {
         return 3600;
     }
 
-    function getNewGuardian() public pure returns (address) {
-        return 0xDEAdFAce00000000000000000000000000000009; // mock address of a new guardian
+    function getNewGuardian() public view returns (address) {
+        return newGuardian;
     }
 
 
