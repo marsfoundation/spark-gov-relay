@@ -250,13 +250,13 @@ abstract contract CrosschainTestBase is Test  {
         );
 
         L2BridgeExecutorArguments memory newL2BridgeExecutorParams = L2BridgeExecutorArguments({
-                ethereumGovernanceExecutor: defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
-                delay:                      1200,
-                gracePeriod:                1800,
-                minimumDelay:               100,
-                maximumDelay:               3600,
-                guardian:                   makeAddr("newGuardian")
-            });
+            ethereumGovernanceExecutor: defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
+            delay:                      1200,
+            gracePeriod:                1800,
+            minimumDelay:               100,
+            maximumDelay:               3600,
+            guardian:                   makeAddr("newGuardian")
+        });
 
         ReconfigurationPayload reconfigurationPayload = new ReconfigurationPayload(
             newL2BridgeExecutorParams.delay,
