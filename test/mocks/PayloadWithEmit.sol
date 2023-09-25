@@ -1,16 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
-import {IPoolConfigurator, ConfiguratorInputTypes} from 'aave-address-book/AaveV3.sol';
-
-interface IProposalGenericExecutor {
-  function execute() external;
-}
-
 /**
  * @dev This payload simply emits an event on execution
  */
-contract PayloadWithEmit is IProposalGenericExecutor {
+contract PayloadWithEmit {
   event TestEvent();
 
   function execute() external {
