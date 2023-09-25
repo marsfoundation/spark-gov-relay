@@ -34,9 +34,9 @@ contract ArbitrumCrosschainTest is CrosschainTestBase  {
         );
     }
 
-    function test_arbitrumGasCalculations(uint256 paylodDataLength) public {
-        paylodDataLength = bound(
-            paylodDataLength,
+    function testFuzz_arbitrumGasCalculations(uint256 payloadDataLength) public {
+        payloadDataLength = bound(
+            payloadDataLength,
             256,
             1024
         );
@@ -46,12 +46,12 @@ contract ArbitrumCrosschainTest is CrosschainTestBase  {
         vm.deal(L1_EXECUTOR, 0);
         assertEq(L1_EXECUTOR.balance, 0);
         (bool hasEnoughGasBefore, uint256 requiredGas) = CrosschainForwarderArbitrum(forwarder)
-            .hasSufficientGasForExecution(L1_EXECUTOR, paylodDataLength);
+            .hasSufficientGasForExecution(L1_EXECUTOR, payloadDataLength);
         assertEq(hasEnoughGasBefore, false);
 
         vm.deal(L1_EXECUTOR, requiredGas);
         (bool hasEnoughGasAfter, ) = CrosschainForwarderArbitrum(forwarder)
-            .hasSufficientGasForExecution(L1_EXECUTOR, paylodDataLength);
+            .hasSufficientGasForExecution(L1_EXECUTOR, payloadDataLength);
         assertEq(hasEnoughGasAfter, true);
     }
 }

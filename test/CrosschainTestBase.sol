@@ -98,7 +98,7 @@ abstract contract CrosschainTestBase is Test  {
         IL2BridgeExecutor(bridgeExecutor).execute(0);
     }
 
-    function testFuzz_actionxecutionFailsBeforeTimelock(uint delay) public {
+    function testFuzz_actionExecutionFailsBeforeTimelock(uint delay) public {
         delay = bound(
             delay,
             0,
