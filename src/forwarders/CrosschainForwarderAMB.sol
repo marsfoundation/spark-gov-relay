@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IL2BridgeExecutor} from 'governance-crosschain-bridges/contracts/interfaces/IL2BridgeExecutor.sol';
+import {IL2BridgeExecutor} from '../interfaces/IL2BridgeExecutor.sol';
 
 interface IAMB {
   function requireToPassMessage(
@@ -35,9 +35,16 @@ contract CrosschainForwarderAMB {
   /**
    * @dev The Gnosis Chain bridge executor is a sidechain governance execution contract.
    * This contract allows queuing of proposals by allow listed addresses (in this case the Mainnet short executor).
-   * https://gnosisscan.io/address/0x75Df5AF045d91108662D8080fD1FEFAd6aA0bb59
    */
-  address public constant AMB_BRIDGE_EXECUTOR = 0xc4218C1127cB24a0D6c1e7D25dc34e10f2625f5A;
+  address public immutable AMB_BRIDGE_EXECUTOR;
+
+  /**
+   * @param bridgeExecutor The L2 executor
+   */
+  constructor(address bridgeExecutor) {
+    AMB_BRIDGE_EXECUTOR = bridgeExecutor;
+  }
+
 
   /**
    * @dev this function will be executed once the proposal passes the mainnet vote.
