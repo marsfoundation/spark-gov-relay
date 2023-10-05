@@ -44,11 +44,11 @@ contract GnosisCrosschainTest is CrosschainTestBase {
         bridgedDomain.selectFork();
 
         assertEq(
-            AMBBridgeExecutor(bridgeExecutor).amb(),
-            AMB
+            address(AMBBridgeExecutor(bridgeExecutor).amb()),
+            address(AMB)
         );
         assertEq(
-            AMBBridgeExecutor(bridgeExecutor).conotroller(),
+            AMBBridgeExecutor(bridgeExecutor).controller(),
             defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor
         );
         assertEq(
@@ -87,11 +87,11 @@ contract GnosisCrosschainTest is CrosschainTestBase {
         IL2BridgeExecutor(bridgeExecutor).execute(0);
 
         assertEq(
-            AMBBridgeExecutor(bridgeExecutor).amb(),
+            address(AMBBridgeExecutor(bridgeExecutor).amb()),
             newAmb
         );
         assertEq(
-            AMBBridgeExecutor(bridgeExecutor).conotroller(),
+            AMBBridgeExecutor(bridgeExecutor).controller(),
             newController
         );
         assertEq(
