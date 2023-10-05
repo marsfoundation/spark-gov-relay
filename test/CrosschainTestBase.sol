@@ -11,11 +11,8 @@ import { IL2BridgeExecutor, IExecutorBase } from '../src/interfaces/IL2BridgeExe
 
 import { PayloadWithEmit } from './mocks/PayloadWithEmit.sol';
 import { ReconfigurationPayload } from './mocks/ReconfigurationPayload.sol';
+import { IBaseCrosschainForwarder } from './interfaces/IBaseCrosschainForwarder.sol';
 import { IExecutor } from './interfaces/IExecutor.sol';
-
-interface IBaseCrosschainForwarder {
-  function execute(address l2PayloadContract) external;
-}
 
 struct L2BridgeExecutorArguments {
     address ethereumGovernanceExecutor;
