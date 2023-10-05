@@ -4,3 +4,4 @@
 [submodule "lib/xchain-helpers"]
 	path = lib/xchain-helpers
 	url = https://github.com/marsfoundation/xchain-helpers
+	branch = add-gnosis-chain-domain
