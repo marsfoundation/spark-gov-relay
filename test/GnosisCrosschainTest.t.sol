@@ -6,12 +6,14 @@ import 'forge-std/Test.sol';
 import { Domain, GnosisDomain } from 'xchain-helpers/GnosisDomain.sol';
 
 import { IAMB, GnosisBridgeExecutor } from '../src/executors/GnosisBridgeExecutor.sol';
-import { CrosschainForwarderGnosis } from '../src/forwarders/CrosschainForwarderGnosis.sol';
-import { IL2BridgeExecutor } from '../src/interfaces/IL2BridgeExecutor.sol';
+import { CrosschainForwarderGnosis }  from '../src/forwarders/CrosschainForwarderGnosis.sol';
+import { IL2BridgeExecutor }          from '../src/interfaces/IL2BridgeExecutor.sol';
+
+import { IBaseCrosschainForwarder } from './interfaces/IBaseCrosschainForwarder.sol';
+import { IExecutor }                from './interfaces/IExecutor.sol';
 
 import { GnosisReconfigurationPayload } from './mocks/GnosisReconfigurationPayload.sol';
-import { IBaseCrosschainForwarder } from './interfaces/IBaseCrosschainForwarder.sol';
-import { IExecutor } from './interfaces/IExecutor.sol';
+
 import { CrosschainTestBase } from './CrosschainTestBase.sol';
 
 contract GnosisCrosschainTest is CrosschainTestBase {

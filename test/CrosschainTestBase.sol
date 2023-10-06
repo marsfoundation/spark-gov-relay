@@ -9,10 +9,11 @@ import { BridgedDomain } from 'xchain-helpers/BridgedDomain.sol';
 
 import { IL2BridgeExecutor, IExecutorBase } from '../src/interfaces/IL2BridgeExecutor.sol';
 
-import { PayloadWithEmit } from './mocks/PayloadWithEmit.sol';
-import { ReconfigurationPayload } from './mocks/ReconfigurationPayload.sol';
 import { IBaseCrosschainForwarder } from './interfaces/IBaseCrosschainForwarder.sol';
-import { IExecutor } from './interfaces/IExecutor.sol';
+import { IExecutor }                from './interfaces/IExecutor.sol';
+
+import { PayloadWithEmit }        from './mocks/PayloadWithEmit.sol';
+import { ReconfigurationPayload } from './mocks/ReconfigurationPayload.sol';
 
 struct L2BridgeExecutorArguments {
     address ethereumGovernanceExecutor;
