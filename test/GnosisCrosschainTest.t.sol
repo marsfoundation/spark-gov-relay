@@ -5,8 +5,8 @@ import 'forge-std/Test.sol';
 
 import { Domain, GnosisDomain } from 'xchain-helpers/GnosisDomain.sol';
 
-import { IAMB, AMBBridgeExecutor } from '../src/executors/AMBBridgeExecutor.sol';
-import { CrosschainForwarderAMB } from '../src/forwarders/CrosschainForwarderAMB.sol';
+import { IAMB, GnosisBridgeExecutor } from '../src/executors/GnosisBridgeExecutor.sol';
+import { CrosschainForwarderGnosis } from '../src/forwarders/CrosschainForwarderGnosis.sol';
 import { IL2BridgeExecutor } from '../src/interfaces/IL2BridgeExecutor.sol';
 
 import { GnosisReconfigurationPayload } from './mocks/GnosisReconfigurationPayload.sol';
@@ -25,7 +25,7 @@ contract GnosisCrosschainTest is CrosschainTestBase {
         bridgedDomain = new GnosisDomain(getChain('gnosis_chain'), hostDomain);
 
         bridgedDomain.selectFork();
-        bridgeExecutor = address(new AMBBridgeExecutor(
+        bridgeExecutor = address(new GnosisBridgeExecutor(
             AMB,
             defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
             MAINNET_CHAIN_ID,
@@ -37,22 +37,22 @@ contract GnosisCrosschainTest is CrosschainTestBase {
         ));
 
         hostDomain.selectFork();
-        forwarder = address(new CrosschainForwarderAMB(bridgeExecutor));
+        forwarder = address(new CrosschainForwarderGnosis(bridgeExecutor));
     }
 
     function test_gnosisSpecificSelfReconfiguration() public {
         bridgedDomain.selectFork();
 
         assertEq(
-            address(AMBBridgeExecutor(bridgeExecutor).amb()),
+            address(GnosisBridgeExecutor(bridgeExecutor).amb()),
             address(AMB)
         );
         assertEq(
-            AMBBridgeExecutor(bridgeExecutor).controller(),
+            GnosisBridgeExecutor(bridgeExecutor).controller(),
             defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor
         );
         assertEq(
-            AMBBridgeExecutor(bridgeExecutor).chainId(),
+            GnosisBridgeExecutor(bridgeExecutor).chainId(),
             MAINNET_CHAIN_ID
         );
 
@@ -87,15 +87,15 @@ contract GnosisCrosschainTest is CrosschainTestBase {
         IL2BridgeExecutor(bridgeExecutor).execute(0);
 
         assertEq(
-            address(AMBBridgeExecutor(bridgeExecutor).amb()),
+            address(GnosisBridgeExecutor(bridgeExecutor).amb()),
             newAmb
         );
         assertEq(
-            AMBBridgeExecutor(bridgeExecutor).controller(),
+            GnosisBridgeExecutor(bridgeExecutor).controller(),
             newController
         );
         assertEq(
-            AMBBridgeExecutor(bridgeExecutor).chainId(),
+            GnosisBridgeExecutor(bridgeExecutor).chainId(),
             newChainId
         );
     }

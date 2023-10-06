@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
-import { AMBBridgeExecutor } from '../../src/executors/AMBBridgeExecutor.sol';
+import { GnosisBridgeExecutor } from '../../src/executors/GnosisBridgeExecutor.sol';
 
 /**
  * @dev This payload reconfigures Gnosis bridge executor to a given state
@@ -24,9 +24,9 @@ contract GnosisReconfigurationPayload {
     }
 
     function execute() external {
-        AMBBridgeExecutor(address(this)).setAmb(getNewAmb());
-        AMBBridgeExecutor(address(this)).setController(getNewController());
-        AMBBridgeExecutor(address(this)).setChainId(getNewChainId());
+        GnosisBridgeExecutor(address(this)).setAmb(getNewAmb());
+        GnosisBridgeExecutor(address(this)).setController(getNewController());
+        GnosisBridgeExecutor(address(this)).setChainId(getNewChainId());
     }
 
     function getNewAmb() public view returns (address) {

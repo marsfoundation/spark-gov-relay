@@ -24,7 +24,7 @@ interface IAMB {
  * @dev This executor is a generic wrapper to be used with AMB (https://etherscan.io/address/0x4C36d2919e407f0Cc2Ee3c993ccF8ac26d9CE64e)
  * It encodes and sends via the L2CrossDomainMessenger a message to queue for execution an action on Gnosis Chain, in the Aave AMB_BRIDGE_EXECUTOR.
  */
-contract CrosschainForwarderAMB {
+contract CrosschainForwarderGnosis {
   /**
    * @dev The AMB Home contract sends messages from Mainnet to Gnosis Chain,.
    * In this contract it's used by the governance SHORT_EXECUTOR to send the encoded Gnosis Cbain queuing over the bridge.
