@@ -21,7 +21,7 @@ contract GnosisCrosschainTest is CrosschainTestBase {
     bytes32 public constant MAINNET_CHAIN_ID = bytes32(uint256(1));
 
     function setUp() public {
-        hostDomain = new Domain(getChain('mainnet'));
+        hostDomain    = new Domain(getChain('mainnet'));
         bridgedDomain = new GnosisDomain(getChain('gnosis_chain'), hostDomain);
 
         bridgedDomain.selectFork();
