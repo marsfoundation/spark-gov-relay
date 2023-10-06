@@ -11,7 +11,7 @@ interface IAMB {
 
 /**
  * @title GnosisBridgeExecutor
- * @author Aave
+ * @author Gnosis
  * @notice Implementation of the AMB Bridge Executor, able to receive cross-chain transactions from Ethereum
  * @dev Queuing an ActionsSet into this Executor can only be done by the AMB contract and must be from the designated
  * controller from the correct origin chain.
