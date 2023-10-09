@@ -4,7 +4,7 @@ pragma solidity ^0.8.10;
 import { IExecutorBase } from '../../src/interfaces/IExecutorBase.sol';
 
 /**
- * @dev This payload reconfigures birdge executor to a given state
+ * @dev This payload reconfigures bridge executor to a given state
  */
 contract ReconfigurationPayload {
 
@@ -55,6 +55,5 @@ contract ReconfigurationPayload {
     function getNewGuardian() public view returns (address) {
         return newGuardian;
     }
-
 
 }
