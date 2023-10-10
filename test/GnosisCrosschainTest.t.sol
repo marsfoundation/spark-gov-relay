@@ -10,7 +10,7 @@ import { IAMB, GnosisBridgeExecutor } from '../src/executors/GnosisBridgeExecuto
 
 import { IL2BridgeExecutor } from '../src/interfaces/IL2BridgeExecutor.sol';
 
-import { IExecutor } from './interfaces/IExecutor.sol';
+import { IL1Executor } from './interfaces/IL1Executor.sol';
 import { IPayload }  from './interfaces/IPayload.sol';
 
 import { GnosisReconfigurationPayload } from './mocks/GnosisReconfigurationPayload.sol';
@@ -92,7 +92,7 @@ contract GnosisCrosschainTest is CrosschainTestBase {
         IPayload crosschainPayload = deployCrosschainPayload(reconfigurationPayload, bridgeExecutor);
 
         vm.prank(L1_PAUSE_PROXY);
-        IExecutor(L1_EXECUTOR).exec(
+        IL1Executor(L1_EXECUTOR).exec(
             address(crosschainPayload),
             abi.encodeWithSelector(IPayload.execute.selector)
         );
