@@ -4,13 +4,13 @@ pragma solidity ^0.8.0;
 import 'forge-std/Test.sol';
 import "forge-std/console.sol";
 
-import { Domain } from 'xchain-helpers/Domain.sol';
 import { BridgedDomain } from 'xchain-helpers/BridgedDomain.sol';
+import { Domain }        from 'xchain-helpers/Domain.sol';
 
 import { IL2BridgeExecutor, IExecutorBase } from '../src/interfaces/IL2BridgeExecutor.sol';
 
-import { IBaseCrosschainForwarder } from './interfaces/IBaseCrosschainForwarder.sol';
-import { IExecutor }                from './interfaces/IExecutor.sol';
+import { IExecutor } from './interfaces/IExecutor.sol';
+import { IPayload }  from './interfaces/IPayload.sol';
 
 import { PayloadWithEmit }        from './mocks/PayloadWithEmit.sol';
 import { ReconfigurationPayload } from './mocks/ReconfigurationPayload.sol';
@@ -23,6 +23,44 @@ struct L2BridgeExecutorArguments {
     uint256 maximumDelay;
     address guardian;
 }
+
+abstract contract CrosschainPayload is IPayload {
+
+    IPayload immutable targetPayload;
+    address immutable bridgeExecutor;
+
+    constructor(IPayload _targetPayload, address _bridgeExecutor) {
+        targetPayload  = _targetPayload;
+        bridgeExecutor = _bridgeExecutor;
+    }
+
+    function execute() external virtual;
+
+    function encodeCrosschainExecutionMessage() internal view returns (bytes memory) {
+
+        address[] memory targets = new address[](1);
+        targets[0] = address(targetPayload);
+        uint256[] memory values = new uint256[](1);
+        values[0] = 0;
+        string[] memory signatures = new string[](1);
+        signatures[0] = 'execute()';
+        bytes[] memory calldatas = new bytes[](1);
+        calldatas[0] = '';
+        bool[] memory withDelegatecalls = new bool[](1);
+        withDelegatecalls[0] = true;
+
+        return abi.encodeWithSelector(
+            IL2BridgeExecutor.queue.selector,
+            targets,
+            values,
+            signatures,
+            calldatas,
+            withDelegatecalls
+        );
+    }
+
+}
+
 
 abstract contract CrosschainTestBase is Test  {
     event TestEvent();
@@ -43,23 +81,23 @@ abstract contract CrosschainTestBase is Test  {
     Domain public hostDomain;
     BridgedDomain public bridgedDomain;
 
-    address public forwarder;
     address public bridgeExecutor;
+
+    function deployCrosschainPayload(IPayload targetPayload, address bridgeExecutor) public virtual returns(IPayload);
 
     function preparePayloadExecution() public {
         bridgedDomain.selectFork();
 
-        bytes memory encodedPayloadData = abi.encodeWithSelector(
-            IBaseCrosschainForwarder.execute.selector,
-            address(new PayloadWithEmit())
-        );
+        IPayload targetPayload = IPayload(new PayloadWithEmit());
 
         hostDomain.selectFork();
 
+        IPayload crosschainPayload = deployCrosschainPayload(targetPayload, bridgeExecutor);
+
         vm.prank(L1_PAUSE_PROXY);
         IExecutor(L1_EXECUTOR).exec(
-            forwarder,
-            encodedPayloadData
+            address(crosschainPayload),
+            abi.encodeWithSelector(IPayload.execute.selector)
         );
 
         bridgedDomain.relayFromHost(true);
@@ -256,25 +294,22 @@ abstract contract CrosschainTestBase is Test  {
             guardian:                   makeAddr("newGuardian")
         });
 
-        ReconfigurationPayload reconfigurationPayload = new ReconfigurationPayload(
+        IPayload reconfigurationPayload = IPayload(new ReconfigurationPayload(
             newL2BridgeExecutorParams.delay,
             newL2BridgeExecutorParams.gracePeriod,
             newL2BridgeExecutorParams.minimumDelay,
             newL2BridgeExecutorParams.maximumDelay,
             newL2BridgeExecutorParams.guardian
-        );
-
-        bytes memory encodedPayloadData = abi.encodeWithSelector(
-            IBaseCrosschainForwarder.execute.selector,
-            address(reconfigurationPayload)
-        );
+        ));
 
         hostDomain.selectFork();
 
+        IPayload crosschainPayload = deployCrosschainPayload(reconfigurationPayload, bridgeExecutor);
+
         vm.prank(L1_PAUSE_PROXY);
         IExecutor(L1_EXECUTOR).exec(
-            forwarder,
-            encodedPayloadData
+            address(crosschainPayload),
+            abi.encodeWithSelector(IPayload.execute.selector)
         );
 
         bridgedDomain.relayFromHost(true);

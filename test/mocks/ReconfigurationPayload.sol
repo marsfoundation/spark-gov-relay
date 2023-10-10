@@ -3,10 +3,12 @@ pragma solidity ^0.8.10;
 
 import { IExecutorBase } from '../../src/interfaces/IExecutorBase.sol';
 
+import { IPayload } from '../interfaces/IPayload.sol';
+
 /**
  * @dev This payload reconfigures bridge executor to a given state
  */
-contract ReconfigurationPayload {
+contract ReconfigurationPayload is IPayload {
 
     uint256 public immutable newDelay;
     uint256 public immutable newGracePeriod;

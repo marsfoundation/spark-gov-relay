@@ -4,13 +4,33 @@ pragma solidity ^0.8.0;
 import 'forge-std/Test.sol';
 
 import { Domain, ArbitrumDomain } from 'xchain-helpers/ArbitrumDomain.sol';
+import { XChainForwarders }       from 'xchain-helpers/XChainForwarders.sol';
 
 import { ArbitrumBridgeExecutor }      from '../src/executors/ArbitrumBridgeExecutor.sol';
-import { CrosschainForwarderArbitrum } from '../src/forwarders/CrosschainForwarderArbitrum.sol';
 
-import { CrosschainTestBase } from './CrosschainTestBase.sol';
+import { IPayload } from './interfaces/IPayload.sol';
+
+import { CrosschainPayload, CrosschainTestBase } from './CrosschainTestBase.sol';
+
+contract ArbitrumCrosschainPayload is CrosschainPayload {
+
+    constructor(IPayload _targetPayload, address _bridgeExecutor) CrosschainPayload(_targetPayload, _bridgeExecutor) {}
+
+    function execute() override external {
+        XChainForwarders.sendMessageArbitrumOne(
+            bridgeExecutor,
+            encodeCrosschainExecutionMessage(),
+            1_000_000
+        );
+    }
+
+}
 
 contract ArbitrumCrosschainTest is CrosschainTestBase  {
+
+    function deployCrosschainPayload(IPayload targetPayload, address bridgeExecutor) public override returns(IPayload) {
+        return IPayload(new ArbitrumCrosschainPayload(targetPayload, bridgeExecutor));
+    }
 
     function setUp() public {
         hostDomain = new Domain(getChain('mainnet'));
@@ -27,31 +47,9 @@ contract ArbitrumCrosschainTest is CrosschainTestBase  {
         ));
 
         hostDomain.selectFork();
-        forwarder = address(new CrosschainForwarderArbitrum(bridgeExecutor));
         vm.deal(
             L1_EXECUTOR,
             0.01 ether
         );
-    }
-
-    function testFuzz_arbitrumGasCalculations(uint256 payloadDataLength) public {
-        payloadDataLength = bound(
-            payloadDataLength,
-            256,
-            1024
-        );
-
-        hostDomain.selectFork();
-
-        vm.deal(L1_EXECUTOR, 0);
-        assertEq(L1_EXECUTOR.balance, 0);
-        (bool hasEnoughGasBefore, uint256 requiredGas) = CrosschainForwarderArbitrum(forwarder)
-            .hasSufficientGasForExecution(L1_EXECUTOR, payloadDataLength);
-        assertEq(hasEnoughGasBefore, false);
-
-        vm.deal(L1_EXECUTOR, requiredGas);
-        (bool hasEnoughGasAfter, ) = CrosschainForwarderArbitrum(forwarder)
-            .hasSufficientGasForExecution(L1_EXECUTOR, payloadDataLength);
-        assertEq(hasEnoughGasAfter, true);
     }
 }

@@ -4,15 +4,37 @@ pragma solidity ^0.8.0;
 import 'forge-std/Test.sol';
 
 import { Domain, OptimismDomain } from 'xchain-helpers/OptimismDomain.sol';
+import { XChainForwarders }       from 'xchain-helpers/XChainForwarders.sol';
 
-import { OptimismBridgeExecutor }      from '../src/executors/OptimismBridgeExecutor.sol';
-import { CrosschainForwarderOptimism } from '../src/forwarders/CrosschainForwarderOptimism.sol';
+import { OptimismBridgeExecutor } from '../src/executors/OptimismBridgeExecutor.sol';
 
-import { CrosschainTestBase } from './CrosschainTestBase.sol';
+import { IL2BridgeExecutor } from '../src/interfaces/IL2BridgeExecutor.sol';
+
+import { IPayload } from './interfaces/IPayload.sol';
+
+import { CrosschainPayload, CrosschainTestBase } from './CrosschainTestBase.sol';
+
+contract OptimismCrosschainPayload is CrosschainPayload {
+
+    constructor(IPayload _targetPayload, address _bridgeExecutor) CrosschainPayload(_targetPayload, _bridgeExecutor) {}
+
+    function execute() override external {
+        XChainForwarders.sendMessageOptimismMainnet(
+            bridgeExecutor,
+            encodeCrosschainExecutionMessage(),
+            1_000_000
+        );
+    }
+
+}
 
 contract OptimismCrosschainTest is CrosschainTestBase {
 
     address public constant OVM_L2_CROSS_DOMAIN_MESSENGER = 0x4200000000000000000000000000000000000007;
+
+    function deployCrosschainPayload(IPayload targetPayload, address bridgeExecutor) public override returns(IPayload) {
+        return IPayload(new OptimismCrosschainPayload(targetPayload, bridgeExecutor));
+    }
 
     function setUp() public {
         hostDomain = new Domain(getChain('mainnet'));
@@ -30,6 +52,6 @@ contract OptimismCrosschainTest is CrosschainTestBase {
         ));
 
         hostDomain.selectFork();
-        forwarder = address(new CrosschainForwarderOptimism(bridgeExecutor));
     }
+
 }
