@@ -14,8 +14,7 @@ In order to add governance relay infrastructure for a new domain, perform the fo
     1. A domain helper abstracting away the process of passing messages between host domain and your bridged domain.
     2. A helper function to the XChainForwarders library abstracting away host domain interactions with the bridge.
 2. Add `BridgeExecutor` to the `/src/executors` directory. Follow currently used naming convention.
-3. If there are any dependencies required, copy them into `/src/dependencies/<YOUR_DOMAIN_NAME>` directory.
-4. Add a new test file for your domain to the `/test` directory. Inherit `CrosschainTestBase` and add tests specific to your domain to the test suite. All of the tests have to pass. Follow linting and naming convention used in other test files.
-5. Use proper labeling for your open PR (always set adequate priority and status)
-6. Get an approving review from at least one of three designated reviewers - **@hexonaut**, **@lucas-manuel** or **@barrutko**
-7. Enjoy governance messages being passed through the bridge to your domain! 🎉
+3. Add a new test file for your domain to the `/test` directory. Inherit `CrosschainTestBase` and add tests specific to your domain to the test suite. All of the tests have to pass. Follow linting and naming convention used in other test files.
+4. Use proper labeling for your open PR (always set adequate priority and status)
+5. Get an approving review from at least one of three designated reviewers - **@hexonaut**, **@lucas-manuel** or **@barrutko**
+6. Enjoy governance messages being passed through the bridge to your domain! 🎉
