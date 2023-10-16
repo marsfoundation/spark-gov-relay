@@ -9,7 +9,7 @@ import { IPayload } from '../interfaces/IPayload.sol';
 contract PayloadWithEmit is IPayload {
   event TestEvent();
 
-  function execute() external {
+  function execute() external override {
     emit TestEvent();
   }
 }

@@ -25,7 +25,7 @@ contract GnosisReconfigurationPayload is IPayload {
         newChainId =    _newChainId;
     }
 
-    function execute() external {
+    function execute() external override {
         GnosisBridgeExecutor(address(this)).setAmb(getNewAmb());
         GnosisBridgeExecutor(address(this)).setController(getNewController());
         GnosisBridgeExecutor(address(this)).setChainId(getNewChainId());

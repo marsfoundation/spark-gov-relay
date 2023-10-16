@@ -30,7 +30,7 @@ contract ReconfigurationPayload is IPayload {
         newGuardian =     _newGuardian;
     }
 
-    function execute() external {
+    function execute() external override {
         IExecutorBase(address(this)).updateDelay(getNewDelay());
         IExecutorBase(address(this)).updateGracePeriod(getNewGracePeriod());
         IExecutorBase(address(this)).updateMinimumDelay(getNewMinimumDelay());
