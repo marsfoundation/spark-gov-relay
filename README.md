@@ -19,3 +19,5 @@ In order to add governance relay infrastructure for a new domain, perform the fo
 5. Use proper labeling for your open PR (always set adequate priority and status)
 6. Get an approving review from at least one of three designated reviewers - **@hexonaut**, **@lucas-manuel** or **@barrutko**
 7. Enjoy governance messages being passed through the bridge to your domain! 🎉
+***
+*The IP in this repository was assigned to Mars SPC Limited in respect of the MarsOne SP*
