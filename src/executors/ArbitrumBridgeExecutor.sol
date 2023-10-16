@@ -10,17 +10,17 @@ import {L2BridgeExecutor} from './L2BridgeExecutor.sol';
  * @dev Queuing an ActionsSet into this Executor can only be done by the L2 Address Alias of the L1 EthereumGovernanceExecutor
  */
 contract ArbitrumBridgeExecutor is L2BridgeExecutor {
-    uint160 internal constant OFFSET = uint160(0x1111000000000000000000000000000000001111);
+  uint160 internal constant OFFSET = uint160(0x1111000000000000000000000000000000001111);
 
-    /// @notice Utility function that converts the msg.sender viewed in the L2 to the
-    /// address in the L1 that submitted a tx to the inbox
-    /// @param l2Address L2 address as viewed in msg.sender
-    /// @return l1Address the address in the L1 that triggered the tx to L2
-    function undoL1ToL2Alias(address l2Address) internal pure returns (address l1Address) {
-        unchecked {
-            l1Address = address(uint160(l2Address) - OFFSET);
-        }
+  /// @notice Utility function that converts the msg.sender viewed in the L2 to the
+  /// address in the L1 that submitted a tx to the inbox
+  /// @param l2Address L2 address as viewed in msg.sender
+  /// @return l1Address the address in the L1 that triggered the tx to L2
+  function undoL1ToL2Alias(address l2Address) internal pure returns (address l1Address) {
+    unchecked {
+      l1Address = address(uint160(l2Address) - OFFSET);
     }
+  }
 
   /// @inheritdoc L2BridgeExecutor
   modifier onlyEthereumGovernanceExecutor() override {
