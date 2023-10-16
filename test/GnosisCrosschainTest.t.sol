@@ -11,7 +11,7 @@ import { IAMB, GnosisBridgeExecutor } from '../src/executors/GnosisBridgeExecuto
 import { IL2BridgeExecutor } from '../src/interfaces/IL2BridgeExecutor.sol';
 
 import { IL1Executor } from './interfaces/IL1Executor.sol';
-import { IPayload }  from './interfaces/IPayload.sol';
+import { IPayload }    from './interfaces/IPayload.sol';
 
 import { GnosisReconfigurationPayload } from './mocks/GnosisReconfigurationPayload.sol';
 
@@ -19,7 +19,8 @@ import { CrosschainPayload, CrosschainTestBase } from './CrosschainTestBase.sol'
 
 contract GnosisCrosschainPayload is CrosschainPayload {
 
-    constructor(IPayload _targetPayload, address _bridgeExecutor) CrosschainPayload(_targetPayload, _bridgeExecutor) {}
+    constructor(IPayload _targetPayload, address _bridgeExecutor)
+      CrosschainPayload(_targetPayload, _bridgeExecutor) {}
 
     function execute() override external {
         XChainForwarders.sendMessageGnosis(
@@ -37,7 +38,9 @@ contract GnosisCrosschainTest is CrosschainTestBase {
 
     bytes32 public constant MAINNET_CHAIN_ID = bytes32(uint256(1));
 
-    function deployCrosschainPayload(IPayload targetPayload, address bridgeExecutor) public override returns(IPayload) {
+    function deployCrosschainPayload(IPayload targetPayload, address bridgeExecutor)
+        public override returns(IPayload)
+    {
         return IPayload(new GnosisCrosschainPayload(targetPayload, bridgeExecutor));
     }
 

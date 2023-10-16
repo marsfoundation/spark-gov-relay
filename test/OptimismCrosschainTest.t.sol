@@ -16,7 +16,8 @@ import { CrosschainPayload, CrosschainTestBase } from './CrosschainTestBase.sol'
 
 contract OptimismCrosschainPayload is CrosschainPayload {
 
-    constructor(IPayload _targetPayload, address _bridgeExecutor) CrosschainPayload(_targetPayload, _bridgeExecutor) {}
+    constructor(IPayload _targetPayload, address _bridgeExecutor)
+      CrosschainPayload(_targetPayload, _bridgeExecutor) {}
 
     function execute() override external {
         XChainForwarders.sendMessageOptimismMainnet(
@@ -32,7 +33,9 @@ contract OptimismCrosschainTest is CrosschainTestBase {
 
     address public constant OVM_L2_CROSS_DOMAIN_MESSENGER = 0x4200000000000000000000000000000000000007;
 
-    function deployCrosschainPayload(IPayload targetPayload, address bridgeExecutor) public override returns(IPayload) {
+    function deployCrosschainPayload(IPayload targetPayload, address bridgeExecutor)
+        public override returns(IPayload)
+    {
         return IPayload(new OptimismCrosschainPayload(targetPayload, bridgeExecutor));
     }
 

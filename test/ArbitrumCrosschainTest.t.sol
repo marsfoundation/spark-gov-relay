@@ -14,7 +14,8 @@ import { CrosschainPayload, CrosschainTestBase } from './CrosschainTestBase.sol'
 
 contract ArbitrumCrosschainPayload is CrosschainPayload {
 
-    constructor(IPayload _targetPayload, address _bridgeExecutor) CrosschainPayload(_targetPayload, _bridgeExecutor) {}
+    constructor(IPayload _targetPayload, address _bridgeExecutor)
+      CrosschainPayload(_targetPayload, _bridgeExecutor) {}
 
     function execute() override external {
         XChainForwarders.sendMessageArbitrumOne(
@@ -28,7 +29,9 @@ contract ArbitrumCrosschainPayload is CrosschainPayload {
 
 contract ArbitrumCrosschainTest is CrosschainTestBase  {
 
-    function deployCrosschainPayload(IPayload targetPayload, address bridgeExecutor) public override returns(IPayload) {
+    function deployCrosschainPayload(IPayload targetPayload, address bridgeExecutor)
+        public override returns(IPayload)
+    {
         return IPayload(new ArbitrumCrosschainPayload(targetPayload, bridgeExecutor));
     }
 

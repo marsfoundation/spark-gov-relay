@@ -10,7 +10,7 @@ import { Domain }        from 'xchain-helpers/Domain.sol';
 import { IL2BridgeExecutor, IExecutorBase } from '../src/interfaces/IL2BridgeExecutor.sol';
 
 import { IL1Executor } from './interfaces/IL1Executor.sol';
-import { IPayload }  from './interfaces/IPayload.sol';
+import { IPayload }    from './interfaces/IPayload.sol';
 
 import { PayloadWithEmit }        from './mocks/PayloadWithEmit.sol';
 import { ReconfigurationPayload } from './mocks/ReconfigurationPayload.sol';
@@ -37,7 +37,6 @@ abstract contract CrosschainPayload is IPayload {
     function execute() external virtual;
 
     function encodeCrosschainExecutionMessage() internal view returns (bytes memory) {
-
         address[] memory targets = new address[](1);
         targets[0] = address(targetPayload);
         uint256[] memory values = new uint256[](1);
@@ -60,7 +59,6 @@ abstract contract CrosschainPayload is IPayload {
     }
 
 }
-
 
 abstract contract CrosschainTestBase is Test  {
     event TestEvent();
