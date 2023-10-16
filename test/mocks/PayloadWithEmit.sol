@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
+import { IPayload } from '../interfaces/IPayload.sol';
+
 /**
  * @dev This payload simply emits an event on execution
  */
-contract PayloadWithEmit {
+contract PayloadWithEmit is IPayload {
   event TestEvent();
 
-  function execute() external {
+  function execute() external override {
     emit TestEvent();
   }
 }

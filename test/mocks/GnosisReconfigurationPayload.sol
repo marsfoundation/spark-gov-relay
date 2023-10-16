@@ -3,10 +3,12 @@ pragma solidity ^0.8.10;
 
 import { GnosisBridgeExecutor } from '../../src/executors/GnosisBridgeExecutor.sol';
 
+import { IPayload } from '../interfaces/IPayload.sol';
+
 /**
  * @dev This payload reconfigures Gnosis bridge executor to a given state
  */
-contract GnosisReconfigurationPayload {
+contract GnosisReconfigurationPayload is IPayload {
 
     address public immutable newAmb;
     address public immutable newController;
@@ -23,7 +25,7 @@ contract GnosisReconfigurationPayload {
         newChainId =    _newChainId;
     }
 
-    function execute() external {
+    function execute() external override {
         GnosisBridgeExecutor(address(this)).setAmb(getNewAmb());
         GnosisBridgeExecutor(address(this)).setController(getNewController());
         GnosisBridgeExecutor(address(this)).setChainId(getNewChainId());
