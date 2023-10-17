@@ -23,11 +23,11 @@ contract ReconfigurationPayload is IPayload {
         uint256 _newMaximumDelay,
         address _newGuardian
     ) {
-        newDelay =        _newDelay;
-        newGracePeriod =  _newGracePeriod;
+        newDelay        = _newDelay;
+        newGracePeriod  = _newGracePeriod;
         newMinimumDelay = _newMinimumDelay;
         newMaximumDelay = _newMaximumDelay;
-        newGuardian =     _newGuardian;
+        newGuardian     = _newGuardian;
     }
 
     function execute() external override {

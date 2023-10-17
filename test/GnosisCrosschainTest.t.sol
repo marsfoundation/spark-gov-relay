@@ -20,26 +20,24 @@ import { CrosschainPayload, CrosschainTestBase } from './CrosschainTestBase.sol'
 contract GnosisCrosschainPayload is CrosschainPayload {
 
     constructor(IPayload _targetPayload, address _bridgeExecutor)
-      CrosschainPayload(_targetPayload, _bridgeExecutor) {}
+        CrosschainPayload(_targetPayload, _bridgeExecutor) {}
 
-    function execute() override external {
+    function execute() external override {
         XChainForwarders.sendMessageGnosis(
             bridgeExecutor,
             encodeCrosschainExecutionMessage(),
             1_000_000
         );
     }
-
 }
 
 contract GnosisCrosschainTest is CrosschainTestBase {
-
     IAMB public constant AMB = IAMB(0x75Df5AF045d91108662D8080fD1FEFAd6aA0bb59);
 
     bytes32 public constant MAINNET_CHAIN_ID = bytes32(uint256(1));
 
     function deployCrosschainPayload(IPayload targetPayload, address bridgeExecutor)
-        public override returns(IPayload)
+        public override returns (IPayload)
     {
         return IPayload(new GnosisCrosschainPayload(targetPayload, bridgeExecutor));
     }
@@ -79,8 +77,8 @@ contract GnosisCrosschainTest is CrosschainTestBase {
             MAINNET_CHAIN_ID
         );
 
-        address newAmb        = makeAddr("newAMB");
-        address newController = makeAddr("newController");
+        address newAmb        = makeAddr('newAMB');
+        address newController = makeAddr('newController');
 
         bytes32 newChainId = bytes32(uint256(2));
 
@@ -92,7 +90,10 @@ contract GnosisCrosschainTest is CrosschainTestBase {
 
         hostDomain.selectFork();
 
-        IPayload crosschainPayload = deployCrosschainPayload(reconfigurationPayload, bridgeExecutor);
+        IPayload crosschainPayload = deployCrosschainPayload(
+            reconfigurationPayload,
+            bridgeExecutor
+        );
 
         vm.prank(L1_PAUSE_PROXY);
         IL1Executor(L1_EXECUTOR).exec(
@@ -106,18 +107,11 @@ contract GnosisCrosschainTest is CrosschainTestBase {
 
         IL2BridgeExecutor(bridgeExecutor).execute(0);
 
-        assertEq(
-            address(GnosisBridgeExecutor(bridgeExecutor).amb()),
-            newAmb
-        );
+        assertEq(address(GnosisBridgeExecutor(bridgeExecutor).amb()), newAmb);
         assertEq(
             GnosisBridgeExecutor(bridgeExecutor).controller(),
             newController
         );
-        assertEq(
-            GnosisBridgeExecutor(bridgeExecutor).chainId(),
-            newChainId
-        );
+        assertEq(GnosisBridgeExecutor(bridgeExecutor).chainId(), newChainId);
     }
-
 }
