@@ -11,7 +11,7 @@ import {IExecutorBase} from '../interfaces/IExecutorBase.sol';
  * contract with proper access control
  */
 abstract contract BridgeExecutorBase is IExecutorBase {
-  // Minimum allowed grace period, which reduces the risk of having an actions set expire due to network congestion
+  // Minimum allowed grace period, which reduces the risk of having an action set expire due to network congestion
   uint256 constant MINIMUM_GRACE_PERIOD = 10 minutes;
 
   // Time between queuing and execution
@@ -44,7 +44,7 @@ abstract contract BridgeExecutorBase is IExecutorBase {
    * @dev Only this contract can call functions marked by this modifier.
    **/
   modifier onlyThis() {
-    if (msg.sender != address(this)) revert OnlyCallableByThis();
+    _check();
     _;
   }
 
@@ -78,6 +78,11 @@ abstract contract BridgeExecutorBase is IExecutorBase {
     _updateGuardian(guardian);
   }
 
+  /// @dev internal function used by the modifier onlyThis
+  function _check() internal view {
+    if (msg.sender != address(this)) revert OnlyCallableByThis();
+  }
+
   /// @inheritdoc IExecutorBase
   function execute(uint256 actionsSetId) external payable override {
     if (getCurrentState(actionsSetId) != ActionsSetState.Queued) revert OnlyQueuedActions();
@@ -89,7 +94,7 @@ abstract contract BridgeExecutorBase is IExecutorBase {
     uint256 actionCount = actionsSet.targets.length;
 
     bytes[] memory returnedData = new bytes[](actionCount);
-    for (uint256 i = 0; i < actionCount; ) {
+    for (uint256 i; i < actionCount; ) {
       returnedData[i] = _executeTransaction(
         actionsSet.targets[i],
         actionsSet.values[i],
@@ -114,7 +119,7 @@ abstract contract BridgeExecutorBase is IExecutorBase {
     actionsSet.canceled = true;
 
     uint256 targetsLength = actionsSet.targets.length;
-    for (uint256 i = 0; i < targetsLength; ) {
+    for (uint256 i; i < targetsLength; ) {
       _cancelTransaction(
         actionsSet.targets[i],
         actionsSet.values[i],
@@ -296,7 +301,7 @@ abstract contract BridgeExecutorBase is IExecutorBase {
       ++_actionsSetCounter;
     }
 
-    for (uint256 i = 0; i < targetsLength; ) {
+    for (uint256 i; i < targetsLength; ) {
       bytes32 actionHash = keccak256(
         abi.encode(
           targets[i],
