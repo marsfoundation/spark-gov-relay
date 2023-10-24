@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.10;
 
-import {BridgeExecutorBase} from './BridgeExecutorBase.sol';
+import { BridgeExecutorBase } from './BridgeExecutorBase.sol';
 
 interface IAMB {
     function messageSender() external view returns (address);

@@ -29,6 +29,7 @@ contract GnosisCrosschainPayload is CrosschainPayload {
             1_000_000
         );
     }
+
 }
 
 contract GnosisCrosschainTest is CrosschainTestBase {
@@ -114,4 +115,5 @@ contract GnosisCrosschainTest is CrosschainTestBase {
         );
         assertEq(GnosisBridgeExecutor(bridgeExecutor).chainId(), newChainId);
     }
+
 }
