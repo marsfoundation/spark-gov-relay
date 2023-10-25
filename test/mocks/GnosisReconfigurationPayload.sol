@@ -20,9 +20,9 @@ contract GnosisReconfigurationPayload is IPayload {
         address _newController,
         bytes32 _newChainId
     ) {
-        newAmb =        _newAmb;
+        newAmb        = _newAmb;
         newController = _newController;
-        newChainId =    _newChainId;
+        newChainId    = _newChainId;
     }
 
     function execute() external override {
