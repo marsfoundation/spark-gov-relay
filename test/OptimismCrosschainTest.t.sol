@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 
-import { Domain, OptimismDomain } from 'xchain-helpers/OptimismDomain.sol';
+import { Domain, OptimismDomain } from 'xchain-helpers/testing/OptimismDomain.sol';
 import { XChainForwarders }       from 'xchain-helpers/XChainForwarders.sol';
 
 import { OptimismBridgeExecutor } from '../src/executors/OptimismBridgeExecutor.sol';
