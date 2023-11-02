@@ -50,7 +50,8 @@ contract ZkEVMCrosschainTest is CrosschainTestBase {
             defaultL2BridgeExecutorArgs.gracePeriod,
             defaultL2BridgeExecutorArgs.minimumDelay,
             defaultL2BridgeExecutorArgs.maximumDelay,
-            defaultL2BridgeExecutorArgs.guardian
+            defaultL2BridgeExecutorArgs.guardian,
+            0
         ));
 
         hostDomain.selectFork();

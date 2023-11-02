@@ -1,18 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.10;
 
-import {L2BridgeExecutor} from "./L2BridgeExecutor.sol";
+import { BridgeExecutorBase } from "./BridgeExecutorBase.sol";
+import { IL2BridgeExecutor } from "../interfaces/IL2BridgeExecutor.sol";
 
-interface IZkEvmBridgeLike {
-    function bridgeMessage(
-        uint32 destinationNetwork,
-        address destinationAddress,
-        bool forceUpdateGlobalExitRoot,
-        bytes calldata metadata
-    ) external payable;
-}
-
-interface IBridgeMessageReceiver {
+interface IZkEVMBridgeMessageReceiver {
     function onMessageReceived(address originAddress, uint32 originNetwork, bytes memory data) external payable;
 }
 
@@ -22,23 +14,30 @@ interface IBridgeMessageReceiver {
  * @dev Queuing an ActionsSet into this Executor can only be done by the ZkEVM Bridge and having
  * the EthereumGovernanceExecutor as the sender
  */
-contract ZkEVMBridgeExecutor is L2BridgeExecutor, IBridgeMessageReceiver {
+contract ZkEVMBridgeExecutor is BridgeExecutorBase, IZkEVMBridgeMessageReceiver {
     error UnauthorizedBridgeCaller();
     error NotDirectlyCallable();
     error InvalidOriginNetwork();
     error InvalidMethodId();
+    error UnauthorizedEthereumExecutor();
 
-    uint32 internal constant _MAINNET_NETWORK_ID = 0;
+    /**
+     * @dev Emitted when the Ethereum Governance Executor is updated
+     * @param oldEthereumGovernanceExecutor The address of the old EthereumGovernanceExecutor
+     * @param newEthereumGovernanceExecutor The address of the new EthereumGovernanceExecutor
+     *
+     */
+    event EthereumGovernanceExecutorUpdate(
+        address oldEthereumGovernanceExecutor, address newEthereumGovernanceExecutor
+    );
+
+    // Address of the Ethereum Governance Executor, which should be able to queue actions sets
+    address internal _ethereumGovernanceExecutor;
+
+    uint32 internal immutable _MAINNET_NETWORK_ID;
 
     // Address of the ZkEVM bridge
-    address public immutable ZKEVM_BRIDGE;
     address internal immutable zkEVMBridge;
-
-    /// @inheritdoc L2BridgeExecutor
-    modifier onlyEthereumGovernanceExecutor() override {
-        revert NotDirectlyCallable();
-        _;
-    }
 
     /**
      * @dev Constructor
@@ -58,22 +57,20 @@ contract ZkEVMBridgeExecutor is L2BridgeExecutor, IBridgeMessageReceiver {
         uint256 gracePeriod,
         uint256 minimumDelay,
         uint256 maximumDelay,
-        address guardian
-    ) L2BridgeExecutor(ethereumGovernanceExecutor, delay, gracePeriod, minimumDelay, maximumDelay, guardian) {
+        address guardian,
+        uint32 mainnetNetworkId
+    ) BridgeExecutorBase(delay, gracePeriod, minimumDelay, maximumDelay, guardian) {
+        _MAINNET_NETWORK_ID = mainnetNetworkId;
+        _ethereumGovernanceExecutor = ethereumGovernanceExecutor;
         zkEVMBridge = bridge;
     }
 
     function onMessageReceived(address originAddress, uint32 originNetwork, bytes calldata data) external payable {
-        if (originAddress != _ethereumGovernanceExecutor) {
-            revert UnauthorizedEthereumExecutor();
-        }
-        if (originNetwork != _MAINNET_NETWORK_ID) {
-            revert InvalidOriginNetwork();
-        }
+        if (msg.sender != zkEVMBridge) revert UnauthorizedBridgeCaller();
+        if (originAddress != _ethereumGovernanceExecutor) revert UnauthorizedEthereumExecutor();
+        if (originNetwork != _MAINNET_NETWORK_ID) revert InvalidOriginNetwork();
         bytes4 methodId = bytes4(data[0:4]);
-        if (methodId != this.queue.selector) {
-            revert InvalidMethodId();
-        }
+        if (methodId != IL2BridgeExecutor.queue.selector) revert InvalidMethodId();
 
         (
             address[] memory targets,
@@ -84,5 +81,24 @@ contract ZkEVMBridgeExecutor is L2BridgeExecutor, IBridgeMessageReceiver {
         ) = abi.decode(data[4:], (address[], uint256[], string[], bytes[], bool[]));
 
         _queue(targets, values, signatures, calldatas, withDelegatecalls);
+    }
+
+    /**
+     * @notice Update the address of the Ethereum Governance Executor
+     * @param ethereumGovernanceExecutor The address of the new EthereumGovernanceExecutor
+     *
+     */
+    function updateEthereumGovernanceExecutor(address ethereumGovernanceExecutor) external onlyThis {
+        emit EthereumGovernanceExecutorUpdate(_ethereumGovernanceExecutor, ethereumGovernanceExecutor);
+        _ethereumGovernanceExecutor = ethereumGovernanceExecutor;
+    }
+
+    /**
+     * @notice Returns the address of the Ethereum Governance Executor
+     * @return The address of the EthereumGovernanceExecutor
+     *
+     */
+    function getEthereumGovernanceExecutor() external view returns (address) {
+        return _ethereumGovernanceExecutor;
     }
 }
