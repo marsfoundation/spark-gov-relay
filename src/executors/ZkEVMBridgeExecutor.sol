@@ -16,7 +16,6 @@ interface IZkEVMBridgeMessageReceiver {
  */
 contract ZkEVMBridgeExecutor is BridgeExecutorBase, IZkEVMBridgeMessageReceiver {
     error UnauthorizedBridgeCaller();
-    error NotDirectlyCallable();
     error InvalidOriginNetwork();
     error InvalidMethodId();
     error UnauthorizedEthereumExecutor();
@@ -32,18 +31,18 @@ contract ZkEVMBridgeExecutor is BridgeExecutorBase, IZkEVMBridgeMessageReceiver 
     );
 
     // Address of the Ethereum Governance Executor, which should be able to queue actions sets
-    address internal _ethereumGovernanceExecutor;
+    address public ethereumGovernanceExecutor;
 
-    uint32 internal immutable _MAINNET_NETWORK_ID;
+    uint32  public immutable originNetworkId;
 
     // Address of the ZkEVM bridge
-    address internal immutable zkEVMBridge;
+    address public immutable zkEVMBridge;
 
     /**
      * @dev Constructor
      *
      * @param bridge The address of the ZkEVM Bridge
-     * @param ethereumGovernanceExecutor The address of the EthereumGovernanceExecutor
+     * @param ethereumGovernanceExecutor_ The address of the EthereumGovernanceExecutor
      * @param delay The delay before which an actions set can be executed
      * @param gracePeriod The time period after a delay during which an actions set can be executed
      * @param minimumDelay The minimum bound a delay can be set to
@@ -52,23 +51,23 @@ contract ZkEVMBridgeExecutor is BridgeExecutorBase, IZkEVMBridgeMessageReceiver 
      */
     constructor(
         address bridge,
-        address ethereumGovernanceExecutor,
+        address ethereumGovernanceExecutor_,
         uint256 delay,
         uint256 gracePeriod,
         uint256 minimumDelay,
         uint256 maximumDelay,
         address guardian,
-        uint32 mainnetNetworkId
+        uint32 originNetworkId_
     ) BridgeExecutorBase(delay, gracePeriod, minimumDelay, maximumDelay, guardian) {
-        _MAINNET_NETWORK_ID = mainnetNetworkId;
-        _ethereumGovernanceExecutor = ethereumGovernanceExecutor;
+        originNetworkId = originNetworkId_;
+        ethereumGovernanceExecutor = ethereumGovernanceExecutor_;
         zkEVMBridge = bridge;
     }
 
     function onMessageReceived(address originAddress, uint32 originNetwork, bytes calldata data) external payable {
         if (msg.sender != zkEVMBridge) revert UnauthorizedBridgeCaller();
-        if (originAddress != _ethereumGovernanceExecutor) revert UnauthorizedEthereumExecutor();
-        if (originNetwork != _MAINNET_NETWORK_ID) revert InvalidOriginNetwork();
+        if (originAddress != ethereumGovernanceExecutor) revert UnauthorizedEthereumExecutor();
+        if (originNetwork != originNetworkId) revert InvalidOriginNetwork();
         bytes4 methodId = bytes4(data[0:4]);
         if (methodId != IL2BridgeExecutor.queue.selector) revert InvalidMethodId();
 
@@ -85,20 +84,11 @@ contract ZkEVMBridgeExecutor is BridgeExecutorBase, IZkEVMBridgeMessageReceiver 
 
     /**
      * @notice Update the address of the Ethereum Governance Executor
-     * @param ethereumGovernanceExecutor The address of the new EthereumGovernanceExecutor
+     * @param ethereumGovernanceExecutor_ The address of the new EthereumGovernanceExecutor
      *
      */
-    function updateEthereumGovernanceExecutor(address ethereumGovernanceExecutor) external onlyThis {
-        emit EthereumGovernanceExecutorUpdate(_ethereumGovernanceExecutor, ethereumGovernanceExecutor);
-        _ethereumGovernanceExecutor = ethereumGovernanceExecutor;
-    }
-
-    /**
-     * @notice Returns the address of the Ethereum Governance Executor
-     * @return The address of the EthereumGovernanceExecutor
-     *
-     */
-    function getEthereumGovernanceExecutor() external view returns (address) {
-        return _ethereumGovernanceExecutor;
+    function updateEthereumGovernanceExecutor(address ethereumGovernanceExecutor_) external onlyThis {
+        emit EthereumGovernanceExecutorUpdate(ethereumGovernanceExecutor, ethereumGovernanceExecutor_);
+        ethereumGovernanceExecutor = ethereumGovernanceExecutor_;
     }
 }
