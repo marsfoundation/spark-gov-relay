@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import 'forge-std/Test.sol';
 import 'forge-std/console.sol';
 
-import { BridgedDomain } from 'xchain-helpers/BridgedDomain.sol';
-import { Domain }        from 'xchain-helpers/Domain.sol';
+import { BridgedDomain } from 'xchain-helpers/testing/BridgedDomain.sol';
+import { Domain }        from 'xchain-helpers/testing/Domain.sol';
 
 import { IL2BridgeExecutor, IExecutorBase } from '../src/interfaces/IL2BridgeExecutor.sol';
 
