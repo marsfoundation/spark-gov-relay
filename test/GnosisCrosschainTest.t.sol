@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 
-import { Domain, GnosisDomain } from 'xchain-helpers/GnosisDomain.sol';
+import { Domain, GnosisDomain } from 'xchain-helpers/testing/GnosisDomain.sol';
 import { XChainForwarders }     from 'xchain-helpers/XChainForwarders.sol';
 
 import { IAMB, GnosisBridgeExecutor } from '../src/executors/GnosisBridgeExecutor.sol';

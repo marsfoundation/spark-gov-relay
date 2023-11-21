@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 
-import { Domain, ArbitrumDomain } from 'xchain-helpers/ArbitrumDomain.sol';
+import { Domain, ArbitrumDomain } from 'xchain-helpers/testing/ArbitrumDomain.sol';
 import { XChainForwarders }       from 'xchain-helpers/XChainForwarders.sol';
 
 import { ArbitrumBridgeExecutor } from '../src/executors/ArbitrumBridgeExecutor.sol';
