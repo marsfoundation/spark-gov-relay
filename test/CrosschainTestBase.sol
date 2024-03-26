@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
-import 'forge-std/console.sol';
 
 import { BridgedDomain } from 'xchain-helpers/testing/BridgedDomain.sol';
 import { Domain }        from 'xchain-helpers/testing/Domain.sol';

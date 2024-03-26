@@ -8,8 +8,6 @@ import { XChainForwarders }       from 'xchain-helpers/XChainForwarders.sol';
 
 import { ZkEVMBridgeExecutor } from '../src/executors/ZkEVMBridgeExecutor.sol';
 
-import { IL2BridgeExecutor } from '../src/interfaces/IL2BridgeExecutor.sol';
-
 import { IPayload } from './interfaces/IPayload.sol';
 
 import { CrosschainPayload, CrosschainTestBase } from './CrosschainTestBase.sol';
