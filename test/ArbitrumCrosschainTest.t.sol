@@ -20,7 +20,9 @@ contract ArbitrumCrosschainPayload is CrosschainPayload {
         XChainForwarders.sendMessageArbitrumOne(
             bridgeExecutor,
             encodeCrosschainExecutionMessage(),
-            1_000_000
+            1_000_000,
+            1 gwei,
+            block.basefee + 10 gwei
         );
     }
 }
