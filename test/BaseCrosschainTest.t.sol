@@ -13,13 +13,13 @@ import { IPayload } from './interfaces/IPayload.sol';
 
 import { CrosschainPayload, CrosschainTestBase } from './CrosschainTestBase.sol';
 
-contract OptimismCrosschainPayload is CrosschainPayload {
+contract BaseCrosschainPayload is CrosschainPayload {
 
     constructor(IPayload _targetPayload, address _bridgeReceiver)
         CrosschainPayload(_targetPayload, _bridgeReceiver) {}
 
     function execute() external override {
-        XChainForwarders.sendMessageOptimismMainnet(
+        XChainForwarders.sendMessageBase(
             bridgeReceiver,
             encodeCrosschainExecutionMessage(),
             1_000_000
@@ -28,17 +28,17 @@ contract OptimismCrosschainPayload is CrosschainPayload {
 
 }
 
-contract OptimismCrosschainTest is CrosschainTestBase {
+contract BaseCrosschainTest is CrosschainTestBase {
 
     function deployCrosschainPayload(IPayload targetPayload, address bridgeReceiver)
         public override returns (IPayload)
     {
-        return IPayload(new OptimismCrosschainPayload(targetPayload, bridgeReceiver));
+        return IPayload(new BaseCrosschainPayload(targetPayload, bridgeReceiver));
     }
 
     function setUp() public {
         hostDomain = new Domain(getChain('mainnet'));
-        bridgedDomain = new OptimismDomain(getChain('optimism'), hostDomain);
+        bridgedDomain = new OptimismDomain(getChain('base'), hostDomain);
 
         bridgedDomain.selectFork();
         bridgeExecutor = new AuthBridgeExecutor(

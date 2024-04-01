@@ -3,42 +3,44 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 
-import { Domain, OptimismDomain } from 'xchain-helpers/testing/OptimismDomain.sol';
+import { Domain, ArbitrumDomain } from 'xchain-helpers/testing/ArbitrumDomain.sol';
 import { XChainForwarders }       from 'xchain-helpers/XChainForwarders.sol';
 
 import { AuthBridgeExecutor }             from '../src/executors/AuthBridgeExecutor.sol';
-import { BridgeExecutorReceiverOptimism } from '../src/receivers/BridgeExecutorReceiverOptimism.sol';
+import { BridgeExecutorReceiverArbitrum } from '../src/receivers/BridgeExecutorReceiverArbitrum.sol';
 
 import { IPayload } from './interfaces/IPayload.sol';
 
 import { CrosschainPayload, CrosschainTestBase } from './CrosschainTestBase.sol';
 
-contract OptimismCrosschainPayload is CrosschainPayload {
+contract ArbitrumCrosschainPayload is CrosschainPayload {
 
     constructor(IPayload _targetPayload, address _bridgeReceiver)
         CrosschainPayload(_targetPayload, _bridgeReceiver) {}
 
     function execute() external override {
-        XChainForwarders.sendMessageOptimismMainnet(
+        XChainForwarders.sendMessageArbitrumOne(
             bridgeReceiver,
             encodeCrosschainExecutionMessage(),
-            1_000_000
+            1_000_000,
+            1 gwei,
+            block.basefee + 10 gwei
         );
     }
 
 }
 
-contract OptimismCrosschainTest is CrosschainTestBase {
+contract ArbitrumCrosschainTest is CrosschainTestBase {
 
     function deployCrosschainPayload(IPayload targetPayload, address bridgeReceiver)
         public override returns (IPayload)
     {
-        return IPayload(new OptimismCrosschainPayload(targetPayload, bridgeReceiver));
+        return IPayload(new ArbitrumCrosschainPayload(targetPayload, bridgeReceiver));
     }
 
     function setUp() public {
         hostDomain = new Domain(getChain('mainnet'));
-        bridgedDomain = new OptimismDomain(getChain('optimism'), hostDomain);
+        bridgedDomain = new ArbitrumDomain(getChain('arbitrum_one'), hostDomain);
 
         bridgedDomain.selectFork();
         bridgeExecutor = new AuthBridgeExecutor(
@@ -48,13 +50,14 @@ contract OptimismCrosschainTest is CrosschainTestBase {
             defaultL2BridgeExecutorArgs.maximumDelay,
             defaultL2BridgeExecutorArgs.guardian
         );
-        bridgeReceiver = address(new BridgeExecutorReceiverOptimism(
+        bridgeReceiver = address(new BridgeExecutorReceiverArbitrum(
             defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
             bridgeExecutor
         ));
         bridgeExecutor.grantRole(bridgeExecutor.AUTHORIZED_BRIDGE_ROLE(), bridgeReceiver);
 
         hostDomain.selectFork();
+        vm.deal(L1_EXECUTOR, 0.01 ether);
     }
 
 }

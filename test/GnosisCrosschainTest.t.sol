@@ -3,23 +3,23 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 
-import { Domain, OptimismDomain } from 'xchain-helpers/testing/OptimismDomain.sol';
-import { XChainForwarders }       from 'xchain-helpers/XChainForwarders.sol';
+import { Domain, GnosisDomain } from 'xchain-helpers/testing/GnosisDomain.sol';
+import { XChainForwarders }     from 'xchain-helpers/XChainForwarders.sol';
 
-import { AuthBridgeExecutor }             from '../src/executors/AuthBridgeExecutor.sol';
-import { BridgeExecutorReceiverOptimism } from '../src/receivers/BridgeExecutorReceiverOptimism.sol';
+import { AuthBridgeExecutor }           from '../src/executors/AuthBridgeExecutor.sol';
+import { BridgeExecutorReceiverGnosis } from '../src/receivers/BridgeExecutorReceiverGnosis.sol';
 
 import { IPayload } from './interfaces/IPayload.sol';
 
 import { CrosschainPayload, CrosschainTestBase } from './CrosschainTestBase.sol';
 
-contract OptimismCrosschainPayload is CrosschainPayload {
+contract GnosisCrosschainPayload is CrosschainPayload {
 
     constructor(IPayload _targetPayload, address _bridgeReceiver)
         CrosschainPayload(_targetPayload, _bridgeReceiver) {}
 
     function execute() external override {
-        XChainForwarders.sendMessageOptimismMainnet(
+        XChainForwarders.sendMessageGnosis(
             bridgeReceiver,
             encodeCrosschainExecutionMessage(),
             1_000_000
@@ -28,17 +28,19 @@ contract OptimismCrosschainPayload is CrosschainPayload {
 
 }
 
-contract OptimismCrosschainTest is CrosschainTestBase {
+contract GnosisCrosschainTest is CrosschainTestBase {
+
+    address constant AMB = 0x75Df5AF045d91108662D8080fD1FEFAd6aA0bb59;
 
     function deployCrosschainPayload(IPayload targetPayload, address bridgeReceiver)
         public override returns (IPayload)
     {
-        return IPayload(new OptimismCrosschainPayload(targetPayload, bridgeReceiver));
+        return IPayload(new GnosisCrosschainPayload(targetPayload, bridgeReceiver));
     }
 
     function setUp() public {
         hostDomain = new Domain(getChain('mainnet'));
-        bridgedDomain = new OptimismDomain(getChain('optimism'), hostDomain);
+        bridgedDomain = new GnosisDomain(getChain('gnosis_chain'), hostDomain);
 
         bridgedDomain.selectFork();
         bridgeExecutor = new AuthBridgeExecutor(
@@ -48,7 +50,9 @@ contract OptimismCrosschainTest is CrosschainTestBase {
             defaultL2BridgeExecutorArgs.maximumDelay,
             defaultL2BridgeExecutorArgs.guardian
         );
-        bridgeReceiver = address(new BridgeExecutorReceiverOptimism(
+        bridgeReceiver = address(new BridgeExecutorReceiverGnosis(
+            AMB,
+            1,  // Ethereum chainid
             defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
             bridgeExecutor
         ));
