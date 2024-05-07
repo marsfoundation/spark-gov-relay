@@ -3,7 +3,7 @@ pragma solidity ^0.8.10;
 
 import { AccessControl } from 'lib/openzeppelin-contracts/contracts/access/AccessControl.sol';
 
-import { IAuthBridgeExecutor } from '../interfaces/IAuthBridgeExecutor.sol';
+import { IAuthBridgeExecutor } from 'src/interfaces/IAuthBridgeExecutor.sol';
 import { BridgeExecutorBase }  from './BridgeExecutorBase.sol';
 
 /**

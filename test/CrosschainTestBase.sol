@@ -6,9 +6,9 @@ import 'forge-std/Test.sol';
 import { BridgedDomain } from 'xchain-helpers/testing/BridgedDomain.sol';
 import { Domain }        from 'xchain-helpers/testing/Domain.sol';
 
-import { IAuthBridgeExecutor } from '../src/interfaces/IAuthBridgeExecutor.sol';
-import { IExecutorBase }       from '../src/interfaces/IExecutorBase.sol';
-import { AuthBridgeExecutor }  from '../src/executors/AuthBridgeExecutor.sol';
+import { IAuthBridgeExecutor } from 'src/interfaces/IAuthBridgeExecutor.sol';
+import { IExecutorBase }       from 'src/interfaces/IExecutorBase.sol';
+import { AuthBridgeExecutor }  from 'src/executors/AuthBridgeExecutor.sol';
 
 import { IL1Executor } from './interfaces/IL1Executor.sol';
 import { IPayload }    from './interfaces/IPayload.sol';

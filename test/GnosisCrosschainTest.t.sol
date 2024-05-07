@@ -6,8 +6,8 @@ import 'forge-std/Test.sol';
 import { Domain, GnosisDomain } from 'xchain-helpers/testing/GnosisDomain.sol';
 import { XChainForwarders }     from 'xchain-helpers/XChainForwarders.sol';
 
-import { AuthBridgeExecutor }           from '../src/executors/AuthBridgeExecutor.sol';
-import { BridgeExecutorReceiverGnosis } from '../src/receivers/BridgeExecutorReceiverGnosis.sol';
+import { AuthBridgeExecutor }           from 'src/executors/AuthBridgeExecutor.sol';
+import { BridgeExecutorReceiverGnosis } from 'src/receivers/BridgeExecutorReceiverGnosis.sol';
 
 import { IPayload } from './interfaces/IPayload.sol';
 

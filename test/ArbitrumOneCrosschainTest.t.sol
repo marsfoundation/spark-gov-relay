@@ -6,14 +6,14 @@ import 'forge-std/Test.sol';
 import { Domain, ArbitrumDomain } from 'xchain-helpers/testing/ArbitrumDomain.sol';
 import { XChainForwarders }       from 'xchain-helpers/XChainForwarders.sol';
 
-import { AuthBridgeExecutor }             from '../src/executors/AuthBridgeExecutor.sol';
-import { BridgeExecutorReceiverArbitrum } from '../src/receivers/BridgeExecutorReceiverArbitrum.sol';
+import { AuthBridgeExecutor }             from 'src/executors/AuthBridgeExecutor.sol';
+import { BridgeExecutorReceiverArbitrum } from 'src/receivers/BridgeExecutorReceiverArbitrum.sol';
 
 import { IPayload } from './interfaces/IPayload.sol';
 
 import { CrosschainPayload, CrosschainTestBase } from './CrosschainTestBase.sol';
 
-contract ArbitrumCrosschainPayload is CrosschainPayload {
+contract ArbitrumOneCrosschainPayload is CrosschainPayload {
 
     constructor(IPayload _targetPayload, address _bridgeReceiver)
         CrosschainPayload(_targetPayload, _bridgeReceiver) {}
@@ -30,12 +30,12 @@ contract ArbitrumCrosschainPayload is CrosschainPayload {
 
 }
 
-contract ArbitrumCrosschainTest is CrosschainTestBase {
+contract ArbitrumOneCrosschainTest is CrosschainTestBase {
 
     function deployCrosschainPayload(IPayload targetPayload, address bridgeReceiver)
         public override returns (IPayload)
     {
-        return IPayload(new ArbitrumCrosschainPayload(targetPayload, bridgeReceiver));
+        return IPayload(new ArbitrumOneCrosschainPayload(targetPayload, bridgeReceiver));
     }
 
     function setUp() public {

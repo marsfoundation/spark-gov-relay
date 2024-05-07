@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import { GnosisReceiver } from 'xchain-helpers/GnosisReceiver.sol';
 
-import { IAuthBridgeExecutor } from '../interfaces/IAuthBridgeExecutor.sol';
+import { IAuthBridgeExecutor } from 'src/interfaces/IAuthBridgeExecutor.sol';
 
 contract BridgeExecutorReceiverGnosis is GnosisReceiver {
 

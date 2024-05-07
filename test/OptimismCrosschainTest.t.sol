@@ -6,8 +6,8 @@ import 'forge-std/Test.sol';
 import { Domain, OptimismDomain } from 'xchain-helpers/testing/OptimismDomain.sol';
 import { XChainForwarders }       from 'xchain-helpers/XChainForwarders.sol';
 
-import { AuthBridgeExecutor }             from '../src/executors/AuthBridgeExecutor.sol';
-import { BridgeExecutorReceiverOptimism } from '../src/receivers/BridgeExecutorReceiverOptimism.sol';
+import { AuthBridgeExecutor }             from 'src/executors/AuthBridgeExecutor.sol';
+import { BridgeExecutorReceiverOptimism } from 'src/receivers/BridgeExecutorReceiverOptimism.sol';
 
 import { IPayload } from './interfaces/IPayload.sol';
 
