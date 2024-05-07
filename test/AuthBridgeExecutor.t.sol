@@ -42,6 +42,9 @@ contract AuthBridgeExecutorTest is Test {
         bytes[] returnedData
     );
     event ActionsSetCanceled(uint256 indexed id);
+    event GuardianUpdate(address oldGuardian, address newGuardian);
+    event DelayUpdate(uint256 oldDelay, uint256 newDelay);
+    event GracePeriodUpdate(uint256 oldGracePeriod, uint256 newGracePeriod);
     event TestEvent();
 
     uint256 constant DELAY        = 1 days;
@@ -295,6 +298,56 @@ contract AuthBridgeExecutorTest is Test {
         assertEq(executor.isActionQueued(actionHash),    false);
         assertEq(executor.getActionsSetById(0).canceled, true);
         assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Canceled));
+    }
+
+    function test_updateGuardian_notSelf() public {
+        vm.expectRevert(abi.encodeWithSignature("OnlyCallableByThis()"));
+        executor.updateGuardian(guardian);
+    }
+
+    function test_updateGuardian() public {
+        address newGuardian = makeAddr("newGuardian");
+
+        assertEq(executor.getGuardian(), guardian);
+
+        vm.expectEmit(address(executor));
+        emit GuardianUpdate(guardian, newGuardian);
+        vm.prank(address(executor));
+        executor.updateGuardian(newGuardian);
+
+        assertEq(executor.getGuardian(), newGuardian);
+    }
+
+    function test_updateDelay_notSelf() public {
+        vm.expectRevert(abi.encodeWithSignature("OnlyCallableByThis()"));
+        executor.updateDelay(2 days);
+    }
+
+    function test_updateDelay() public {
+        assertEq(executor.getDelay(), 1 days);
+
+        vm.expectEmit(address(executor));
+        emit DelayUpdate(1 days, 2 days);
+        vm.prank(address(executor));
+        executor.updateDelay(2 days);
+
+        assertEq(executor.getDelay(), 2 days);
+    }
+
+    function test_updateGracePeriod_notSelf() public {
+        vm.expectRevert(abi.encodeWithSignature("OnlyCallableByThis()"));
+        executor.updateGracePeriod(60 days);
+    }
+
+    function test_updateGracePeriod() public {
+        assertEq(executor.getGracePeriod(), 30 days);
+
+        vm.expectEmit(address(executor));
+        emit GracePeriodUpdate(30 days, 60 days);
+        vm.prank(address(executor));
+        executor.updateGracePeriod(60 days);
+
+        assertEq(executor.getGracePeriod(), 60 days);
     }
 
     function _getDefaultAction() internal returns (Action memory) {
