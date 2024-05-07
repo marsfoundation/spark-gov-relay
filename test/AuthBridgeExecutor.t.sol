@@ -404,6 +404,15 @@ contract AuthBridgeExecutorTest is Test {
         executor.updateGracePeriod(60 days);
     }
 
+    function test_updateGracePeriod_underMinimum_boundary() public {
+        vm.expectRevert(abi.encodeWithSignature("GracePeriodTooShort()"));
+        vm.prank(address(executor));
+        executor.updateGracePeriod(10 minutes - 1);
+
+        vm.prank(address(executor));
+        executor.updateGracePeriod(10 minutes);
+    }
+
     function test_updateGracePeriod() public {
         assertEq(executor.getGracePeriod(), 30 days);
 
