@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import 'forge-std/Test.sol';
 
 import { AuthBridgeExecutor } from 'src/executors/AuthBridgeExecutor.sol';
+import { IExecutorBase }      from 'src/interfaces/IExecutorBase.sol';
 
 contract DefaultPayload {
     event TestEvent();
@@ -40,6 +41,7 @@ contract AuthBridgeExecutorTest is Test {
         address indexed initiatorExecution,
         bytes[] returnedData
     );
+    event ActionsSetCanceled(uint256 indexed id);
     event TestEvent();
 
     uint256 constant DELAY        = 1 days;
@@ -177,7 +179,9 @@ contract AuthBridgeExecutorTest is Test {
         _queueAction(action);
         skip(DELAY);
 
-        assertEq(executor.isActionQueued(actionHash), true);
+        assertEq(executor.isActionQueued(actionHash),    true);
+        assertEq(executor.getActionsSetById(0).executed, false);
+        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Queued));
 
         bytes[] memory returnedData = new bytes[](1);
         returnedData[0] = "";
@@ -187,7 +191,9 @@ contract AuthBridgeExecutorTest is Test {
         emit ActionsSetExecuted(0, address(this), returnedData);
         executor.execute(0);
 
-        assertEq(executor.isActionQueued(actionHash), false);
+        assertEq(executor.isActionQueued(actionHash),    false);
+        assertEq(executor.getActionsSetById(0).executed, true);
+        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Executed));
     }
 
     function test_execute_call() public {
@@ -197,7 +203,9 @@ contract AuthBridgeExecutorTest is Test {
         _queueAction(action);
         skip(DELAY);
 
-        assertEq(executor.isActionQueued(actionHash), true);
+        assertEq(executor.isActionQueued(actionHash),    true);
+        assertEq(executor.getActionsSetById(0).executed, false);
+        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Queued));
 
         bytes[] memory returnedData = new bytes[](1);
         returnedData[0] = "";
@@ -207,7 +215,86 @@ contract AuthBridgeExecutorTest is Test {
         emit ActionsSetExecuted(0, address(this), returnedData);
         executor.execute(0);
 
-        assertEq(executor.isActionQueued(actionHash), false);
+        assertEq(executor.isActionQueued(actionHash),    false);
+        assertEq(executor.getActionsSetById(0).executed, true);
+        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Executed));
+    }
+
+    function test_cancel_notGuardian() public {
+        _queueAction();
+        skip(DELAY);
+
+        vm.expectRevert(abi.encodeWithSignature("NotGuardian()"));
+        executor.cancel(0);
+    }
+
+    function test_cancel_actionsSetId_too_high_boundary() public {
+        assertEq(executor.getActionsSetCount(), 0);
+        vm.expectRevert(abi.encodeWithSignature("InvalidActionsSetId()"));
+        vm.prank(guardian);
+        executor.cancel(0);
+
+        _queueAction();
+        skip(DELAY);
+
+        assertEq(executor.getActionsSetCount(), 1);
+        vm.prank(guardian);
+        executor.cancel(0);
+    }
+
+    function test_cancel_notQueued_cancelled() public {
+        _queueAction();
+        vm.prank(guardian);
+        executor.cancel(0);
+        
+        vm.expectRevert(abi.encodeWithSignature("OnlyQueuedActions()"));
+        vm.prank(guardian);
+        executor.cancel(0);
+    }
+
+    function test_cancel_notQueued_executed() public {
+        _queueAction();
+        skip(DELAY);
+
+        vm.prank(guardian);
+        executor.cancel(0);
+        
+        vm.expectRevert(abi.encodeWithSignature("OnlyQueuedActions()"));
+        vm.prank(guardian);
+        executor.cancel(0);
+    }
+
+    function test_cancel_notQueued_expired_boundary() public {
+        _queueAction();
+        skip(DELAY + GRACE_PERIOD + 1);
+        
+        vm.expectRevert(abi.encodeWithSignature("OnlyQueuedActions()"));
+        vm.prank(guardian);
+        executor.cancel(0);
+
+        vm.warp(block.timestamp - 1);
+
+        vm.prank(guardian);
+        executor.cancel(0);
+    }
+
+    function test_cancel() public {
+        Action memory action = _getDefaultAction();
+        bytes32 actionHash = _encodeHash(action, block.timestamp + DELAY);
+        _queueAction(action);
+
+        assertEq(executor.isActionQueued(actionHash),    true);
+        assertEq(executor.getActionsSetById(0).canceled, false);
+        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Queued));
+
+        vm.expectEmit(address(executor));
+        emit ActionsSetCanceled(0);
+        vm.prank(guardian);
+        executor.cancel(0);
+
+        assertEq(executor.isActionQueued(actionHash),    false);
+        assertEq(executor.getActionsSetById(0).canceled, true);
+        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Canceled));
     }
 
     function _getDefaultAction() internal returns (Action memory) {
