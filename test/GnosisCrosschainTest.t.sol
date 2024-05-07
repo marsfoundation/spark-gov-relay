@@ -61,4 +61,18 @@ contract GnosisCrosschainTest is CrosschainTestBase {
         hostDomain.selectFork();
     }
 
+    function test_constructor_receiver() public {
+        BridgeExecutorReceiverGnosis receiver = new BridgeExecutorReceiverGnosis(
+            AMB,
+            1,
+            defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
+            bridgeExecutor
+        );
+
+        assertEq(address(receiver.l2CrossDomain()), AMB);
+        assertEq(receiver.chainId(),                bytes32(uint256(1)));
+        assertEq(receiver.l1Authority(),            defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor);
+        assertEq(address(receiver.executor()),      address(bridgeExecutor));
+    }
+
 }

@@ -57,4 +57,14 @@ contract OptimismCrosschainTest is CrosschainTestBase {
         hostDomain.selectFork();
     }
 
+    function test_constructor_receiver() public {
+        BridgeExecutorReceiverOptimism receiver = new BridgeExecutorReceiverOptimism(
+            defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
+            bridgeExecutor
+        );
+
+        assertEq(receiver.l1Authority(),        defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor);
+        assertEq(address(receiver.executor()), address(bridgeExecutor));
+    }
+
 }

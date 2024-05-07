@@ -60,4 +60,14 @@ contract ArbitrumOneCrosschainTest is CrosschainTestBase {
         vm.deal(L1_EXECUTOR, 0.01 ether);
     }
 
+    function test_constructor_receiver() public {
+        BridgeExecutorReceiverArbitrum receiver = new BridgeExecutorReceiverArbitrum(
+            defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
+            bridgeExecutor
+        );
+
+        assertEq(receiver.l1Authority(),       defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor);
+        assertEq(address(receiver.executor()), address(bridgeExecutor));
+    }
+
 }
