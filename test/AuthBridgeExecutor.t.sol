@@ -68,6 +68,17 @@ contract AuthBridgeExecutorTest is Test {
         executor.revokeRole(executor.DEFAULT_ADMIN_ROLE(),    address(this));
     }
 
+    function test_constructor_invalidInitParams() public {
+        vm.expectRevert(abi.encodeWithSignature("InvalidInitParams()"));
+        executor = new AuthBridgeExecutor({
+            delay:        DELAY,
+            gracePeriod:  10 minutes - 1,
+            minimumDelay: 0,
+            maximumDelay: 365 days,
+            guardian:     guardian
+        });
+    }
+
     function test_constructor() public {
         executor = new AuthBridgeExecutor({
             delay:        DELAY,
