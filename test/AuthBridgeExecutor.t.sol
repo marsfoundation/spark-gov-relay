@@ -85,7 +85,72 @@ contract AuthBridgeExecutorTest is Test {
         assertEq(executor.getRoleAdmin(executor.AUTHORIZED_BRIDGE_ROLE()), executor.DEFAULT_ADMIN_ROLE());
     }
 
-    function test_execute_actionsSetId_too_high_boundary() public {
+    function test_queue_onlyBridge() public {
+        vm.expectRevert(abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", address(this), executor.AUTHORIZED_BRIDGE_ROLE()));
+        executor.queue(new address[](0), new uint256[](0), new string[](0), new bytes[](0), new bool[](0));
+    }
+
+    function test_queue_lengthZero() public {
+        vm.expectRevert(abi.encodeWithSignature("EmptyTargets()"));
+        vm.prank(bridge);
+        executor.queue(new address[](0), new uint256[](0), new string[](0), new bytes[](0), new bool[](0));
+    }
+
+    function test_queue_inconsistentParamsLength() public {
+        vm.expectRevert(abi.encodeWithSignature("InconsistentParamsLength()"));
+        vm.prank(bridge);
+        executor.queue(new address[](2), new uint256[](1), new string[](1), new bytes[](1), new bool[](1));
+
+        vm.expectRevert(abi.encodeWithSignature("InconsistentParamsLength()"));
+        vm.prank(bridge);
+        executor.queue(new address[](1), new uint256[](2), new string[](1), new bytes[](1), new bool[](1));
+
+        vm.expectRevert(abi.encodeWithSignature("InconsistentParamsLength()"));
+        vm.prank(bridge);
+        executor.queue(new address[](1), new uint256[](1), new string[](2), new bytes[](1), new bool[](1));
+
+        vm.expectRevert(abi.encodeWithSignature("InconsistentParamsLength()"));
+        vm.prank(bridge);
+        executor.queue(new address[](1), new uint256[](1), new string[](1), new bytes[](2), new bool[](1));
+
+        vm.expectRevert(abi.encodeWithSignature("InconsistentParamsLength()"));
+        vm.prank(bridge);
+        executor.queue(new address[](1), new uint256[](1), new string[](1), new bytes[](1), new bool[](2));
+    }
+
+    function test_queue_duplicateAction() public {
+        Action memory action = _getDefaultAction();
+        _queueAction(action);
+
+        vm.expectRevert(abi.encodeWithSignature("DuplicateAction()"));
+        _queueAction(action);
+    }
+
+    function test_queue() public {
+        Action memory action = _getDefaultAction();
+        bytes32 actionHash1 = _encodeHash(action, block.timestamp + DELAY);
+        bytes32 actionHash2 = _encodeHash(action, block.timestamp + DELAY + 1);
+
+        assertEq(executor.getActionsSetCount(),        0);
+        assertEq(executor.isActionQueued(actionHash1), false);
+        assertEq(executor.isActionQueued(actionHash2), false);
+
+        _queueAction(action);
+
+        assertEq(executor.getActionsSetCount(),        1);
+        assertEq(executor.isActionQueued(actionHash1), true);
+        assertEq(executor.isActionQueued(actionHash2), false);
+
+        // Can queue up the same action 1 second later
+        skip(1);
+        _queueAction(action);
+
+        assertEq(executor.getActionsSetCount(),        2);
+        assertEq(executor.isActionQueued(actionHash1), true);
+        assertEq(executor.isActionQueued(actionHash2), true);
+    }
+
+    function test_execute_actionsSetIdTooHigh_boundary() public {
         assertEq(executor.getActionsSetCount(), 0);
         vm.expectRevert(abi.encodeWithSignature("InvalidActionsSetId()"));
         executor.execute(0);
@@ -231,7 +296,7 @@ contract AuthBridgeExecutorTest is Test {
         executor.cancel(0);
     }
 
-    function test_cancel_actionsSetId_too_high_boundary() public {
+    function test_cancel_actionsSetIdTooHigh_boundary() public {
         assertEq(executor.getActionsSetCount(), 0);
         vm.expectRevert(abi.encodeWithSignature("InvalidActionsSetId()"));
         vm.prank(guardian);
@@ -350,15 +415,37 @@ contract AuthBridgeExecutorTest is Test {
         assertEq(executor.getGracePeriod(), 60 days);
     }
 
+    function test_executeDelegateCall_notSelf() public {
+        vm.expectRevert(abi.encodeWithSignature("OnlyCallableByThis()"));
+        executor.executeDelegateCall(address(0), "");
+    }
+
+    function test_executeDelegateCall() public {
+        address target = address(new DefaultPayload());
+
+        vm.expectEmit(address(executor));
+        emit TestEvent();
+        vm.prank(address(executor));
+        executor.executeDelegateCall(target, abi.encodeCall(DefaultPayload.execute, ()));
+    }
+
+    function test_receiveFunds() public {
+        assertEq(address(executor).balance, 0);
+
+        executor.receiveFunds{value:1 ether}();
+
+        assertEq(address(executor).balance, 1 ether);
+    }
+
     function _getDefaultAction() internal returns (Action memory) {
         address[] memory targets = new address[](1);
         targets[0] = address(new DefaultPayload());
         uint256[] memory values = new uint256[](1);
         values[0] = 0;
         string[] memory signatures = new string[](1);
-        signatures[0] = 'execute()';
+        signatures[0] = "execute()";
         bytes[] memory calldatas = new bytes[](1);
-        calldatas[0] = '';
+        calldatas[0] = "";
         bool[] memory withDelegatecalls = new bool[](1);
         withDelegatecalls[0] = true;
 
