@@ -6,7 +6,9 @@ import 'forge-std/Test.sol';
 import { BridgedDomain } from 'xchain-helpers/testing/BridgedDomain.sol';
 import { Domain }        from 'xchain-helpers/testing/Domain.sol';
 
-import { IL2BridgeExecutor, IExecutorBase } from '../src/interfaces/IL2BridgeExecutor.sol';
+import { IAuthBridgeExecutor } from '../src/interfaces/IAuthBridgeExecutor.sol';
+import { IExecutorBase }       from '../src/interfaces/IExecutorBase.sol';
+import { AuthBridgeExecutor }  from '../src/executors/AuthBridgeExecutor.sol';
 
 import { IL1Executor } from './interfaces/IL1Executor.sol';
 import { IPayload }    from './interfaces/IPayload.sol';
@@ -26,11 +28,11 @@ struct L2BridgeExecutorArguments {
 abstract contract CrosschainPayload is IPayload {
 
     IPayload immutable targetPayload;
-    address immutable bridgeExecutor;
+    address immutable bridgeReceiver;
 
-    constructor(IPayload _targetPayload, address _bridgeExecutor) {
+    constructor(IPayload _targetPayload, address _bridgeReceiver) {
         targetPayload  = _targetPayload;
-        bridgeExecutor = _bridgeExecutor;
+        bridgeReceiver = _bridgeReceiver;
     }
 
     function execute() external virtual;
@@ -48,7 +50,7 @@ abstract contract CrosschainPayload is IPayload {
         withDelegatecalls[0] = true;
 
         return abi.encodeWithSelector(
-            IL2BridgeExecutor.queue.selector,
+            IAuthBridgeExecutor.queue.selector,
             targets,
             values,
             signatures,
@@ -75,12 +77,13 @@ abstract contract CrosschainTestBase is Test {
         guardian:                   GUARDIAN
     });
 
-    Domain public hostDomain;
+    Domain        public hostDomain;
     BridgedDomain public bridgedDomain;
 
-    address public bridgeExecutor;
+    AuthBridgeExecutor public bridgeExecutor;
+    address            public bridgeReceiver;
 
-    function deployCrosschainPayload(IPayload targetPayload, address bridgeExecutor) public virtual returns (IPayload);
+    function deployCrosschainPayload(IPayload targetPayload, address bridgeReceiver) public virtual returns (IPayload);
 
     function preparePayloadExecution() public {
         bridgedDomain.selectFork();
@@ -91,7 +94,7 @@ abstract contract CrosschainTestBase is Test {
 
         IPayload crosschainPayload = deployCrosschainPayload(
             targetPayload,
-            bridgeExecutor
+            bridgeReceiver
         );
 
         vm.prank(L1_PAUSE_PROXY);
@@ -114,9 +117,9 @@ abstract contract CrosschainTestBase is Test {
 
         skip(delay);
 
-        vm.expectEmit(bridgeExecutor);
+        vm.expectEmit(address(bridgeExecutor));
         emit TestEvent();
-        IL2BridgeExecutor(bridgeExecutor).execute(0);
+        bridgeExecutor.execute(0);
     }
 
     function testFuzz_actionExecutionFailsAfterGracePeriod(uint delay) public {
@@ -131,7 +134,7 @@ abstract contract CrosschainTestBase is Test {
         skip(delay);
 
         vm.expectRevert(IExecutorBase.OnlyQueuedActions.selector);
-        IL2BridgeExecutor(bridgeExecutor).execute(0);
+        bridgeExecutor.execute(0);
     }
 
     function testFuzz_actionExecutionFailsBeforeTimelock(uint delay) public {
@@ -142,23 +145,23 @@ abstract contract CrosschainTestBase is Test {
         skip(delay);
 
         vm.expectRevert(IExecutorBase.TimelockNotFinished.selector);
-        IL2BridgeExecutor(bridgeExecutor).execute(0);
+        bridgeExecutor.execute(0);
     }
 
     function test_nonExistentActionExecutionFails() public {
         vm.expectRevert();
-        IL2BridgeExecutor(bridgeExecutor).execute(0);
+        bridgeExecutor.execute(0);
 
         preparePayloadExecution();
 
         skip(defaultL2BridgeExecutorArgs.delay);
 
         vm.expectRevert();
-        IL2BridgeExecutor(bridgeExecutor).execute(1);
+        bridgeExecutor.execute(1);
 
-        vm.expectEmit(bridgeExecutor);
+        vm.expectEmit(address(bridgeExecutor));
         emit TestEvent();
-        IL2BridgeExecutor(bridgeExecutor).execute(0);
+        bridgeExecutor.execute(0);
     }
 
     function test_onlyGuardianCanCancel() public {
@@ -167,24 +170,24 @@ abstract contract CrosschainTestBase is Test {
         preparePayloadExecution();
 
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getActionsSetById(0).canceled,
+            bridgeExecutor.getActionsSetById(0).canceled,
             false
         );
 
         vm.expectRevert();
         vm.prank(notGuardian);
-        IL2BridgeExecutor(bridgeExecutor).cancel(0);
+        bridgeExecutor.cancel(0);
 
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getActionsSetById(0).canceled,
+            bridgeExecutor.getActionsSetById(0).canceled,
             false
         );
 
         vm.prank(defaultL2BridgeExecutorArgs.guardian);
-        IL2BridgeExecutor(bridgeExecutor).cancel(0);
+        bridgeExecutor.cancel(0);
 
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getActionsSetById(0).canceled,
+            bridgeExecutor.getActionsSetById(0).canceled,
             true
         );
     }
@@ -193,11 +196,11 @@ abstract contract CrosschainTestBase is Test {
         preparePayloadExecution();
 
         vm.prank(defaultL2BridgeExecutorArgs.guardian);
-        IL2BridgeExecutor(bridgeExecutor).cancel(0);
+        bridgeExecutor.cancel(0);
 
         vm.expectRevert(IExecutorBase.OnlyQueuedActions.selector);
         vm.prank(defaultL2BridgeExecutorArgs.guardian);
-        IL2BridgeExecutor(bridgeExecutor).cancel(0);
+        bridgeExecutor.cancel(0);
     }
 
     function test_executedActionCannotBeCanceled() public {
@@ -205,11 +208,11 @@ abstract contract CrosschainTestBase is Test {
 
         skip(defaultL2BridgeExecutorArgs.delay);
 
-        IL2BridgeExecutor(bridgeExecutor).execute(0);
+        bridgeExecutor.execute(0);
 
         vm.expectRevert(IExecutorBase.OnlyQueuedActions.selector);
         vm.prank(defaultL2BridgeExecutorArgs.guardian);
-        IL2BridgeExecutor(bridgeExecutor).cancel(0);
+        bridgeExecutor.cancel(0);
     }
 
     function test_expiredActionCannotBeCanceled() public {
@@ -219,7 +222,7 @@ abstract contract CrosschainTestBase is Test {
 
         vm.expectRevert(IExecutorBase.OnlyQueuedActions.selector);
         vm.prank(defaultL2BridgeExecutorArgs.guardian);
-        IL2BridgeExecutor(bridgeExecutor).cancel(0);
+        bridgeExecutor.cancel(0);
     }
 
     function test_canceledActionCannotBeExecuted() public {
@@ -228,10 +231,10 @@ abstract contract CrosschainTestBase is Test {
         skip(defaultL2BridgeExecutorArgs.delay);
 
         vm.prank(defaultL2BridgeExecutorArgs.guardian);
-        IL2BridgeExecutor(bridgeExecutor).cancel(0);
+        bridgeExecutor.cancel(0);
 
         vm.expectRevert(IExecutorBase.OnlyQueuedActions.selector);
-        IL2BridgeExecutor(bridgeExecutor).execute(0);
+        bridgeExecutor.execute(0);
     }
 
     function test_executingMultipleActions() public {
@@ -244,60 +247,60 @@ abstract contract CrosschainTestBase is Test {
         skip(defaultL2BridgeExecutorArgs.delay);
 
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getActionsSetById(0).executed,
+            bridgeExecutor.getActionsSetById(0).executed,
             false
         );
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getActionsSetById(1).executed,
+            bridgeExecutor.getActionsSetById(1).executed,
             false
         );
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getActionsSetById(2).executed,
+            bridgeExecutor.getActionsSetById(2).executed,
             false
         );
 
-        IL2BridgeExecutor(bridgeExecutor).execute(1);
+        bridgeExecutor.execute(1);
 
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getActionsSetById(0).executed,
+            bridgeExecutor.getActionsSetById(0).executed,
             false
         );
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getActionsSetById(1).executed,
+            bridgeExecutor.getActionsSetById(1).executed,
             true
         );
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getActionsSetById(2).executed,
+            bridgeExecutor.getActionsSetById(2).executed,
             false
         );
 
-        IL2BridgeExecutor(bridgeExecutor).execute(2);
+        bridgeExecutor.execute(2);
 
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getActionsSetById(0).executed,
+            bridgeExecutor.getActionsSetById(0).executed,
             false
         );
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getActionsSetById(1).executed,
+            bridgeExecutor.getActionsSetById(1).executed,
             true
         );
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getActionsSetById(2).executed,
+            bridgeExecutor.getActionsSetById(2).executed,
             true
         );
 
-        IL2BridgeExecutor(bridgeExecutor).execute(0);
+        bridgeExecutor.execute(0);
 
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getActionsSetById(0).executed,
+            bridgeExecutor.getActionsSetById(0).executed,
             true
         );
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getActionsSetById(1).executed,
+            bridgeExecutor.getActionsSetById(1).executed,
             true
         );
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getActionsSetById(2).executed,
+            bridgeExecutor.getActionsSetById(2).executed,
             true
         );
     }
@@ -306,23 +309,23 @@ abstract contract CrosschainTestBase is Test {
         bridgedDomain.selectFork();
 
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getDelay(),
+            bridgeExecutor.getDelay(),
             defaultL2BridgeExecutorArgs.delay
         );
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getGracePeriod(),
+            bridgeExecutor.getGracePeriod(),
             defaultL2BridgeExecutorArgs.gracePeriod
         );
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getMinimumDelay(),
+            bridgeExecutor.getMinimumDelay(),
             defaultL2BridgeExecutorArgs.minimumDelay
         );
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getMaximumDelay(),
+            bridgeExecutor.getMaximumDelay(),
             defaultL2BridgeExecutorArgs.maximumDelay
         );
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getGuardian(),
+            bridgeExecutor.getGuardian(),
             defaultL2BridgeExecutorArgs.guardian
         );
 
@@ -347,7 +350,7 @@ abstract contract CrosschainTestBase is Test {
 
         IPayload crosschainPayload = deployCrosschainPayload(
             reconfigurationPayload,
-            bridgeExecutor
+            bridgeReceiver
         );
 
         vm.prank(L1_PAUSE_PROXY);
@@ -360,26 +363,26 @@ abstract contract CrosschainTestBase is Test {
 
         skip(defaultL2BridgeExecutorArgs.delay);
 
-        IL2BridgeExecutor(bridgeExecutor).execute(0);
+        bridgeExecutor.execute(0);
 
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getDelay(),
+            bridgeExecutor.getDelay(),
             newL2BridgeExecutorParams.delay
         );
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getGracePeriod(),
+            bridgeExecutor.getGracePeriod(),
             newL2BridgeExecutorParams.gracePeriod
         );
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getMinimumDelay(),
+            bridgeExecutor.getMinimumDelay(),
             newL2BridgeExecutorParams.minimumDelay
         );
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getMaximumDelay(),
+            bridgeExecutor.getMaximumDelay(),
             newL2BridgeExecutorParams.maximumDelay
         );
         assertEq(
-            IL2BridgeExecutor(bridgeExecutor).getGuardian(),
+            bridgeExecutor.getGuardian(),
             newL2BridgeExecutorParams.guardian
         );
     }
