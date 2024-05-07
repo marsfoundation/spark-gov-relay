@@ -299,6 +299,31 @@ contract AuthBridgeExecutorTest is Test {
         assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Executed));
     }
 
+    function test_execute_delegateCallWithCalldata() public {
+        Action memory action = _getDefaultAction();
+        action.signatures[0] = "";
+        action.calldatas[0]  = abi.encodeWithSignature("execute()");
+        bytes32 actionHash = _encodeHash(action, block.timestamp + DELAY);
+        _queueAction(action);
+        skip(DELAY);
+
+        assertEq(executor.isActionQueued(actionHash),    true);
+        assertEq(executor.getActionsSetById(0).executed, false);
+        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Queued));
+
+        bytes[] memory returnedData = new bytes[](1);
+        returnedData[0] = "";
+        vm.expectEmit(address(executor));
+        emit TestEvent();
+        vm.expectEmit(address(executor));
+        emit ActionsSetExecuted(0, address(this), returnedData);
+        executor.execute(0);
+
+        assertEq(executor.isActionQueued(actionHash),    false);
+        assertEq(executor.getActionsSetById(0).executed, true);
+        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Executed));
+    }
+
     function test_cancel_notGuardian() public {
         _queueAction();
         skip(DELAY);
