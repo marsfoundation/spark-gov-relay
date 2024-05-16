@@ -26,7 +26,7 @@ contract RevertingPayload {
     }
 }
 
-contract AuthBridgeExecutorTest is Test {
+contract AuthBridgeExecutorTestBase is Test {
 
     struct Action {
         address[] targets;
@@ -36,6 +36,15 @@ contract AuthBridgeExecutorTest is Test {
         bool[]    withDelegatecalls;
     }
 
+    event ActionsSetQueued(
+        uint256 indexed id,
+        address[] targets,
+        uint256[] values,
+        string[] signatures,
+        bytes[] calldatas,
+        bool[] withDelegatecalls,
+        uint256 executionTime
+    );
     event ActionsSetExecuted(
         uint256 indexed id,
         address indexed initiatorExecution,
@@ -68,7 +77,85 @@ contract AuthBridgeExecutorTest is Test {
         executor.revokeRole(executor.DEFAULT_ADMIN_ROLE(),    address(this));
     }
 
-    function test_constructor_invalidInitParams() public {
+    /******************************************************************************************************************/
+    /*** Helper functions                                                                                           ***/
+    /******************************************************************************************************************/
+
+    function _getDefaultAction() internal returns (Action memory) {
+        address[] memory targets = new address[](1);
+        targets[0] = address(new DefaultPayload());
+        uint256[] memory values = new uint256[](1);
+        values[0] = 0;
+        string[] memory signatures = new string[](1);
+        signatures[0] = "execute()";
+        bytes[] memory calldatas = new bytes[](1);
+        calldatas[0] = "";
+        bool[] memory withDelegatecalls = new bool[](1);
+        withDelegatecalls[0] = true;
+
+        return Action({
+            targets:           targets,
+            values:            values,
+            signatures:        signatures,
+            calldatas:         calldatas,
+            withDelegatecalls: withDelegatecalls
+        });
+    }
+
+    function _queueAction(Action memory action) internal {
+        vm.prank(bridge);
+        executor.queue(
+            action.targets,
+            action.values,
+            action.signatures,
+            action.calldatas,
+            action.withDelegatecalls
+        );
+    }
+
+    function _queueAction() internal {
+        _queueAction(_getDefaultAction());
+    }
+
+    function _queueActionWithValue(uint256 value) internal {
+        Action memory action = _getDefaultAction();
+        action.targets[0] = address(new PayablePayload());
+        action.values[0]  = value;
+        _queueAction(action);
+    }
+
+    function _encodeHash(Action memory action, uint256 index, uint256 executionTime) internal pure returns (bytes32) {
+        return keccak256(abi.encode(
+            action.targets[index],
+            action.values[index],
+            action.signatures[index],
+            action.calldatas[index],
+            executionTime,
+            action.withDelegatecalls[index]
+        ));
+    }
+
+    function _encodeHash(Action memory action, uint256 executionTime) internal pure returns (bytes32) {
+        return _encodeHash(action, 0, executionTime);
+    }
+
+    function _assertActionSet(uint256 id, bool executed, bool canceled, uint256 executionTime, Action memory actions) internal view {
+        IExecutorBase.ActionsSet memory actionsSet = executor.getActionsSetById(id);
+        assertEq(actionsSet.targets,           actions.targets);
+        assertEq(actionsSet.values,            actions.values);
+        assertEq(actionsSet.signatures,        actions.signatures);
+        assertEq(actionsSet.calldatas,         actions.calldatas);
+        assertEq(actionsSet.withDelegatecalls, actions.withDelegatecalls);
+        assertEq(actionsSet.executionTime,     executionTime);
+        assertEq(actionsSet.executed,          executed);
+        assertEq(actionsSet.canceled,          canceled);
+    }
+
+}
+
+contract AuthBridgeExecutorConstructorTests is AuthBridgeExecutorTestBase {
+
+    function test_constructor_invalidInitParams_boundary() public {
         vm.expectRevert(abi.encodeWithSignature("InvalidInitParams()"));
         executor = new AuthBridgeExecutor({
             delay:        DELAY,
@@ -77,9 +164,23 @@ contract AuthBridgeExecutorTest is Test {
             maximumDelay: 365 days,
             guardian:     guardian
         });
+
+        executor = new AuthBridgeExecutor({
+            delay:        DELAY,
+            gracePeriod:  10 minutes,
+            minimumDelay: 0,
+            maximumDelay: 365 days,
+            guardian:     guardian
+        });
     }
 
     function test_constructor() public {
+        vm.expectEmit();
+        emit DelayUpdate(0, DELAY);
+        vm.expectEmit();
+        emit GracePeriodUpdate(0, GRACE_PERIOD);
+        vm.expectEmit();
+        emit GuardianUpdate(address(0), guardian);
         executor = new AuthBridgeExecutor({
             delay:        DELAY,
             gracePeriod:  GRACE_PERIOD,
@@ -93,8 +194,12 @@ contract AuthBridgeExecutorTest is Test {
         assertEq(executor.getGuardian(),    guardian);
 
         assertEq(executor.hasRole(executor.DEFAULT_ADMIN_ROLE(), address(this)), true);
-        assertEq(executor.getRoleAdmin(executor.AUTHORIZED_BRIDGE_ROLE()), executor.DEFAULT_ADMIN_ROLE());
+        assertEq(executor.getRoleAdmin(executor.AUTHORIZED_BRIDGE_ROLE()),       executor.DEFAULT_ADMIN_ROLE());
     }
+
+}
+
+contract AuthBridgeExecutorQueueTests is AuthBridgeExecutorTestBase {
 
     function test_queue_onlyBridge() public {
         vm.expectRevert(abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", address(this), executor.AUTHORIZED_BRIDGE_ROLE()));
@@ -146,20 +251,58 @@ contract AuthBridgeExecutorTest is Test {
         assertEq(executor.isActionQueued(actionHash1), false);
         assertEq(executor.isActionQueued(actionHash2), false);
 
+        vm.expectEmit(address(executor));
+        emit ActionsSetQueued(
+            0,
+            action.targets,
+            action.values,
+            action.signatures,
+            action.calldatas,
+            action.withDelegatecalls,
+            block.timestamp + DELAY
+        );
         _queueAction(action);
 
         assertEq(executor.getActionsSetCount(),        1);
         assertEq(executor.isActionQueued(actionHash1), true);
         assertEq(executor.isActionQueued(actionHash2), false);
+        _assertActionSet({
+            id:            0,
+            executed:      false,
+            canceled:      false,
+            executionTime: block.timestamp + DELAY,
+            actions:       action
+        });
 
         // Can queue up the same action 1 second later
         skip(1);
+        vm.expectEmit(address(executor));
+        emit ActionsSetQueued(
+            1,
+            action.targets,
+            action.values,
+            action.signatures,
+            action.calldatas,
+            action.withDelegatecalls,
+            block.timestamp + DELAY
+        );
         _queueAction(action);
 
         assertEq(executor.getActionsSetCount(),        2);
         assertEq(executor.isActionQueued(actionHash1), true);
         assertEq(executor.isActionQueued(actionHash2), true);
+        _assertActionSet({
+            id:            1,
+            executed:      false,
+            canceled:      false,
+            executionTime: block.timestamp + DELAY,
+            actions:       action
+        });
     }
+
+}
+
+contract AuthBridgeExecutorExecutorTests is AuthBridgeExecutorTestBase {
 
     function test_execute_actionsSetIdTooHigh_boundary() public {
         assertEq(executor.getActionsSetCount(), 0);
@@ -204,7 +347,7 @@ contract AuthBridgeExecutorTest is Test {
         executor.execute(0);
     }
 
-    function test_execute_timelock_not_finished_boundary() public {
+    function test_execute_timelockNotFinished_boundary() public {
         _queueAction();
         skip(DELAY - 1);
         
@@ -216,7 +359,7 @@ contract AuthBridgeExecutorTest is Test {
         executor.execute(0);
     }
 
-    function test_execute_balance_too_low_boundary() public {
+    function test_execute_balanceTooLow_boundary() public {
         _queueActionWithValue(1 ether);
         skip(DELAY);
 
@@ -324,6 +467,36 @@ contract AuthBridgeExecutorTest is Test {
         assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Executed));
     }
 
+    function test_execute_callWithCalldata() public {
+        Action memory action = _getDefaultAction();
+        action.signatures[0]        = "";
+        action.calldatas[0]         = abi.encodeWithSignature("execute()");
+        action.withDelegatecalls[0] = false;
+        bytes32 actionHash = _encodeHash(action, block.timestamp + DELAY);
+        _queueAction(action);
+        skip(DELAY);
+
+        assertEq(executor.isActionQueued(actionHash),    true);
+        assertEq(executor.getActionsSetById(0).executed, false);
+        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Queued));
+
+        bytes[] memory returnedData = new bytes[](1);
+        returnedData[0] = "";
+        vm.expectEmit(action.targets[0]);
+        emit TestEvent();
+        vm.expectEmit(address(executor));
+        emit ActionsSetExecuted(0, address(this), returnedData);
+        executor.execute(0);
+
+        assertEq(executor.isActionQueued(actionHash),    false);
+        assertEq(executor.getActionsSetById(0).executed, true);
+        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Executed));
+    }
+
+}
+
+contract AuthBridgeExecutorCancelTests is AuthBridgeExecutorTestBase {
+
     function test_cancel_notGuardian() public {
         _queueAction();
         skip(DELAY);
@@ -360,8 +533,7 @@ contract AuthBridgeExecutorTest is Test {
         _queueAction();
         skip(DELAY);
 
-        vm.prank(guardian);
-        executor.cancel(0);
+        executor.execute(0);
         
         vm.expectRevert(abi.encodeWithSignature("OnlyQueuedActions()"));
         vm.prank(guardian);
@@ -400,6 +572,10 @@ contract AuthBridgeExecutorTest is Test {
         assertEq(executor.getActionsSetById(0).canceled, true);
         assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Canceled));
     }
+
+}
+
+contract AuthBridgeExecutorUpdateTests is AuthBridgeExecutorTestBase {
 
     function test_updateGuardian_notSelf() public {
         vm.expectRevert(abi.encodeWithSignature("OnlyCallableByThis()"));
@@ -460,6 +636,10 @@ contract AuthBridgeExecutorTest is Test {
         assertEq(executor.getGracePeriod(), 60 days);
     }
 
+}
+
+contract AuthBridgeExecutorMiscTests is AuthBridgeExecutorTestBase {
+
     function test_executeDelegateCall_notSelf() public {
         vm.expectRevert(abi.encodeWithSignature("OnlyCallableByThis()"));
         executor.executeDelegateCall(address(0), "");
@@ -480,64 +660,6 @@ contract AuthBridgeExecutorTest is Test {
         executor.receiveFunds{value:1 ether}();
 
         assertEq(address(executor).balance, 1 ether);
-    }
-
-    function _getDefaultAction() internal returns (Action memory) {
-        address[] memory targets = new address[](1);
-        targets[0] = address(new DefaultPayload());
-        uint256[] memory values = new uint256[](1);
-        values[0] = 0;
-        string[] memory signatures = new string[](1);
-        signatures[0] = "execute()";
-        bytes[] memory calldatas = new bytes[](1);
-        calldatas[0] = "";
-        bool[] memory withDelegatecalls = new bool[](1);
-        withDelegatecalls[0] = true;
-
-        return Action({
-            targets:           targets,
-            values:            values,
-            signatures:        signatures,
-            calldatas:         calldatas,
-            withDelegatecalls: withDelegatecalls
-        });
-    }
-
-    function _queueAction(Action memory action) internal {
-        vm.prank(bridge);
-        executor.queue(
-            action.targets,
-            action.values,
-            action.signatures,
-            action.calldatas,
-            action.withDelegatecalls
-        );
-    }
-
-    function _queueAction() internal {
-        _queueAction(_getDefaultAction());
-    }
-
-    function _queueActionWithValue(uint256 value) internal {
-        Action memory action = _getDefaultAction();
-        action.targets[0] = address(new PayablePayload());
-        action.values[0]  = value;
-        _queueAction(action);
-    }
-
-    function _encodeHash(Action memory action, uint256 index, uint256 executionTime) internal pure returns (bytes32) {
-        return keccak256(abi.encode(
-            action.targets[index],
-            action.values[index],
-            action.signatures[index],
-            action.calldatas[index],
-            executionTime,
-            action.withDelegatecalls[index]
-        ));
-    }
-
-    function _encodeHash(Action memory action, uint256 executionTime) internal pure returns (bytes32) {
-        return _encodeHash(action, 0, executionTime);
     }
 
 }

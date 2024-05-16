@@ -63,7 +63,7 @@ contract OptimismCrosschainTest is CrosschainTestBase {
             bridgeExecutor
         );
 
-        assertEq(receiver.l1Authority(),        defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor);
+        assertEq(receiver.l1Authority(),       defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor);
         assertEq(address(receiver.executor()), address(bridgeExecutor));
     }
 
