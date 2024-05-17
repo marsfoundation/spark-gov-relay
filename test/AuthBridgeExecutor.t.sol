@@ -139,13 +139,13 @@ contract AuthBridgeExecutorTestBase is Test {
         return _encodeHash(action, 0, executionTime);
     }
 
-    function _assertActionSet(uint256 id, bool executed, bool canceled, uint256 executionTime, Action memory actions) internal view {
+    function _assertActionSet(uint256 id, bool executed, bool canceled, uint256 executionTime, Action memory action) internal view {
         IExecutorBase.ActionsSet memory actionsSet = executor.getActionsSetById(id);
-        assertEq(actionsSet.targets,           actions.targets);
-        assertEq(actionsSet.values,            actions.values);
-        assertEq(actionsSet.signatures,        actions.signatures);
-        assertEq(actionsSet.calldatas,         actions.calldatas);
-        assertEq(actionsSet.withDelegatecalls, actions.withDelegatecalls);
+        assertEq(actionsSet.targets,           action.targets);
+        assertEq(actionsSet.values,            action.values);
+        assertEq(actionsSet.signatures,        action.signatures);
+        assertEq(actionsSet.calldatas,         action.calldatas);
+        assertEq(actionsSet.withDelegatecalls, action.withDelegatecalls);
         assertEq(actionsSet.executionTime,     executionTime);
         assertEq(actionsSet.executed,          executed);
         assertEq(actionsSet.canceled,          canceled);
@@ -271,7 +271,7 @@ contract AuthBridgeExecutorQueueTests is AuthBridgeExecutorTestBase {
             executed:      false,
             canceled:      false,
             executionTime: block.timestamp + DELAY,
-            actions:       action
+            action:        action
         });
 
         // Can queue up the same action 1 second later
@@ -296,13 +296,13 @@ contract AuthBridgeExecutorQueueTests is AuthBridgeExecutorTestBase {
             executed:      false,
             canceled:      false,
             executionTime: block.timestamp + DELAY,
-            actions:       action
+            action:        action
         });
     }
 
 }
 
-contract AuthBridgeExecutorExecutorTests is AuthBridgeExecutorTestBase {
+contract AuthBridgeExecutorExecuteTests is AuthBridgeExecutorTestBase {
 
     function test_execute_actionsSetIdTooHigh_boundary() public {
         assertEq(executor.getActionsSetCount(), 0);
