@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
@@ -6,8 +6,8 @@ import 'forge-std/Test.sol';
 import { Domain, OptimismDomain } from 'xchain-helpers/testing/OptimismDomain.sol';
 import { XChainForwarders }       from 'xchain-helpers/XChainForwarders.sol';
 
-import { AuthBridgeExecutor }             from '../src/executors/AuthBridgeExecutor.sol';
-import { BridgeExecutorReceiverOptimism } from '../src/receivers/BridgeExecutorReceiverOptimism.sol';
+import { AuthBridgeExecutor }             from 'src/executors/AuthBridgeExecutor.sol';
+import { BridgeExecutorReceiverOptimism } from 'src/receivers/BridgeExecutorReceiverOptimism.sol';
 
 import { IPayload } from './interfaces/IPayload.sol';
 
@@ -55,6 +55,16 @@ contract OptimismCrosschainTest is CrosschainTestBase {
         bridgeExecutor.grantRole(bridgeExecutor.AUTHORIZED_BRIDGE_ROLE(), bridgeReceiver);
 
         hostDomain.selectFork();
+    }
+
+    function test_constructor_receiver() public {
+        BridgeExecutorReceiverOptimism receiver = new BridgeExecutorReceiverOptimism(
+            defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
+            bridgeExecutor
+        );
+
+        assertEq(receiver.l1Authority(),       defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor);
+        assertEq(address(receiver.executor()), address(bridgeExecutor));
     }
 
 }

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
@@ -6,14 +6,14 @@ import 'forge-std/Test.sol';
 import { Domain, ArbitrumDomain } from 'xchain-helpers/testing/ArbitrumDomain.sol';
 import { XChainForwarders }       from 'xchain-helpers/XChainForwarders.sol';
 
-import { AuthBridgeExecutor }             from '../src/executors/AuthBridgeExecutor.sol';
-import { BridgeExecutorReceiverArbitrum } from '../src/receivers/BridgeExecutorReceiverArbitrum.sol';
+import { AuthBridgeExecutor }             from 'src/executors/AuthBridgeExecutor.sol';
+import { BridgeExecutorReceiverArbitrum } from 'src/receivers/BridgeExecutorReceiverArbitrum.sol';
 
 import { IPayload } from './interfaces/IPayload.sol';
 
 import { CrosschainPayload, CrosschainTestBase } from './CrosschainTestBase.sol';
 
-contract ArbitrumCrosschainPayload is CrosschainPayload {
+contract ArbitrumOneCrosschainPayload is CrosschainPayload {
 
     constructor(IPayload _targetPayload, address _bridgeReceiver)
         CrosschainPayload(_targetPayload, _bridgeReceiver) {}
@@ -30,12 +30,12 @@ contract ArbitrumCrosschainPayload is CrosschainPayload {
 
 }
 
-contract ArbitrumCrosschainTest is CrosschainTestBase {
+contract ArbitrumOneCrosschainTest is CrosschainTestBase {
 
     function deployCrosschainPayload(IPayload targetPayload, address bridgeReceiver)
         public override returns (IPayload)
     {
-        return IPayload(new ArbitrumCrosschainPayload(targetPayload, bridgeReceiver));
+        return IPayload(new ArbitrumOneCrosschainPayload(targetPayload, bridgeReceiver));
     }
 
     function setUp() public {
@@ -58,6 +58,16 @@ contract ArbitrumCrosschainTest is CrosschainTestBase {
 
         hostDomain.selectFork();
         vm.deal(L1_EXECUTOR, 0.01 ether);
+    }
+
+    function test_constructor_receiver() public {
+        BridgeExecutorReceiverArbitrum receiver = new BridgeExecutorReceiverArbitrum(
+            defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
+            bridgeExecutor
+        );
+
+        assertEq(receiver.l1Authority(),       defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor);
+        assertEq(address(receiver.executor()), address(bridgeExecutor));
     }
 
 }

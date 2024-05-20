@@ -1,9 +1,9 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
 import { ArbitrumReceiver } from 'xchain-helpers/ArbitrumReceiver.sol';
 
-import { IAuthBridgeExecutor } from '../interfaces/IAuthBridgeExecutor.sol';
+import { IAuthBridgeExecutor } from 'src/interfaces/IAuthBridgeExecutor.sol';
 
 contract BridgeExecutorReceiverArbitrum is ArbitrumReceiver {
 
