@@ -16,7 +16,7 @@ contract ArbitrumOneCrosschainPayload is CrosschainPayload {
         ArbitrumForwarder.sendMessageL1toL2(
             ArbitrumForwarder.L1_CROSS_DOMAIN_ARBITRUM_ONE,
             bridgeReceiver,
-            abi.encodeCall(ArbitrumReceiver.forward, (encodeCrosschainExecutionMessage())),
+            encodeCrosschainExecutionMessage(),
             1_000_000,
             1 gwei,
             block.basefee + 10 gwei

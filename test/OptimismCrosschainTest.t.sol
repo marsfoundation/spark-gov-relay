@@ -16,7 +16,7 @@ contract OptimismCrosschainPayload is CrosschainPayload {
         OptimismForwarder.sendMessageL1toL2(
             OptimismForwarder.L1_CROSS_DOMAIN_OPTIMISM,
             bridgeReceiver,
-            abi.encodeCall(OptimismReceiver.forward, (encodeCrosschainExecutionMessage())),
+            encodeCrosschainExecutionMessage(),
             1_000_000
         );
     }

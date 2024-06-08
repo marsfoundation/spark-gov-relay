@@ -15,7 +15,7 @@ contract GnosisCrosschainPayload is CrosschainPayload {
     function execute() external override {
         AMBForwarder.sendMessageEthereumToGnosisChain(
             bridgeReceiver,
-            abi.encodeCall(AMBReceiver.forward, (encodeCrosschainExecutionMessage())),
+            encodeCrosschainExecutionMessage(),
             1_000_000
         );
     }
