@@ -116,20 +116,6 @@ interface IExecutorBase {
     event GracePeriodUpdate(uint256 oldGracePeriod, uint256 newGracePeriod);
 
     /**
-     * @dev Emitted when the minimum delay (lower bound of delay) is updated
-     * @param oldMinimumDelay The value of the old minimum delay
-     * @param newMinimumDelay The value of the new minimum delay
-     **/
-    event MinimumDelayUpdate(uint256 oldMinimumDelay, uint256 newMinimumDelay);
-
-    /**
-     * @dev Emitted when the maximum delay (upper bound of delay)is updated
-     * @param oldMaximumDelay The value of the old maximum delay
-     * @param newMaximumDelay The value of the new maximum delay
-     **/
-    event MaximumDelayUpdate(uint256 oldMaximumDelay, uint256 newMaximumDelay);
-
-    /**
      * @notice Execute the ActionsSet
      * @param actionsSetId The id of the ActionsSet to execute
      **/
@@ -161,18 +147,6 @@ interface IExecutorBase {
     function updateGracePeriod(uint256 gracePeriod) external;
 
     /**
-     * @notice Update the minimum allowed delay
-     * @param minimumDelay The value of the minimum delay (in seconds)
-     **/
-    function updateMinimumDelay(uint256 minimumDelay) external;
-
-    /**
-     * @notice Update the maximum allowed delay
-     * @param maximumDelay The maximum delay (in seconds)
-     **/
-    function updateMaximumDelay(uint256 maximumDelay) external;
-
-    /**
      * @notice Allows to delegatecall a given target with an specific amount of value
      * @dev This function is external so it allows to specify a defined msg.value for the delegate call, reducing
      * the risk that a delegatecall gets executed with more value than intended
@@ -201,18 +175,6 @@ interface IExecutorBase {
      * @return The value of the grace period (in seconds)
      **/
     function getGracePeriod() external view returns (uint256);
-
-    /**
-     * @notice Returns the minimum delay
-     * @return The value of the minimum delay (in seconds)
-     **/
-    function getMinimumDelay() external view returns (uint256);
-
-    /**
-     * @notice Returns the maximum delay
-     * @return The value of the maximum delay (in seconds)
-     **/
-    function getMaximumDelay() external view returns (uint256);
 
     /**
      * @notice Returns the address of the guardian

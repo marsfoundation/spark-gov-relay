@@ -19,22 +19,16 @@ contract AuthBridgeExecutor is IAuthBridgeExecutor, AccessControl, BridgeExecuto
      *
      * @param delay The delay before which an actions set can be executed
      * @param gracePeriod The time period after a delay during which an actions set can be executed
-     * @param minimumDelay The minimum bound a delay can be set to
-     * @param maximumDelay The maximum bound a delay can be set to
      * @param guardian The address of the guardian, which can cancel queued proposals (can be zero)
      */
     constructor(
         uint256 delay,
         uint256 gracePeriod,
-        uint256 minimumDelay,
-        uint256 maximumDelay,
         address guardian
     )
         BridgeExecutorBase(
             delay,
             gracePeriod,
-            minimumDelay,
-            maximumDelay,
             guardian
         )
     {
