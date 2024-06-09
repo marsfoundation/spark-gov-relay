@@ -3,9 +3,8 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 
-import { ArbitrumBridgeTesting } from 'lib/xchain-helpers/src/testing/bridges/ArbitrumBridgeTesting.sol';
 import { Bridge }        from 'lib/xchain-helpers/src/testing/Bridge.sol';
-import { Domain, DomainHelpers } from 'lib/xchain-helpers/src/testing/Domain.sol';
+import { DomainHelpers } from 'lib/xchain-helpers/src/testing/Domain.sol';
 
 import { IAuthBridgeExecutor } from 'src/interfaces/IAuthBridgeExecutor.sol';
 import { IExecutorBase }       from 'src/interfaces/IExecutorBase.sol';
