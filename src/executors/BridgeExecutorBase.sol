@@ -18,10 +18,6 @@ abstract contract BridgeExecutorBase is IExecutorBase {
     uint256 private _delay;
     // Time after the execution time during which the actions set can be executed
     uint256 private _gracePeriod;
-    // Minimum allowed delay
-    uint256 private _minimumDelay;
-    // Maximum allowed delay
-    uint256 private _maximumDelay;
     // Address with the ability of canceling actions sets
     address private _guardian;
 
@@ -53,28 +49,19 @@ abstract contract BridgeExecutorBase is IExecutorBase {
     *
     * @param delay The delay before which an actions set can be executed
     * @param gracePeriod The time period after a delay during which an actions set can be executed
-    * @param minimumDelay The minimum bound a delay can be set to
-    * @param maximumDelay The maximum bound a delay can be set to
     * @param guardian The address of the guardian, which can cancel queued proposals (can be zero)
     */
     constructor(
         uint256 delay,
         uint256 gracePeriod,
-        uint256 minimumDelay,
-        uint256 maximumDelay,
         address guardian
     ) {
         if (
-            gracePeriod < MINIMUM_GRACE_PERIOD ||
-            minimumDelay >= maximumDelay ||
-            delay < minimumDelay ||
-            delay > maximumDelay
+            gracePeriod < MINIMUM_GRACE_PERIOD
         ) revert InvalidInitParams();
 
         _updateDelay(delay);
         _updateGracePeriod(gracePeriod);
-        _updateMinimumDelay(minimumDelay);
-        _updateMaximumDelay(maximumDelay);
         _updateGuardian(guardian);
     }
 
@@ -138,7 +125,6 @@ abstract contract BridgeExecutorBase is IExecutorBase {
 
     /// @inheritdoc IExecutorBase
     function updateDelay(uint256 delay) external override onlyThis {
-        _validateDelay(delay);
         _updateDelay(delay);
     }
 
@@ -146,20 +132,6 @@ abstract contract BridgeExecutorBase is IExecutorBase {
     function updateGracePeriod(uint256 gracePeriod) external override onlyThis {
         if (gracePeriod < MINIMUM_GRACE_PERIOD) revert GracePeriodTooShort();
         _updateGracePeriod(gracePeriod);
-    }
-
-    /// @inheritdoc IExecutorBase
-    function updateMinimumDelay(uint256 minimumDelay) external override onlyThis {
-        if (minimumDelay >= _maximumDelay) revert MinimumDelayTooLong();
-        _updateMinimumDelay(minimumDelay);
-        _validateDelay(_delay);
-    }
-
-    /// @inheritdoc IExecutorBase
-    function updateMaximumDelay(uint256 maximumDelay) external override onlyThis {
-        if (maximumDelay <= _minimumDelay) revert MaximumDelayTooShort();
-        _updateMaximumDelay(maximumDelay);
-        _validateDelay(_delay);
     }
 
     /// @inheritdoc IExecutorBase
@@ -188,16 +160,6 @@ abstract contract BridgeExecutorBase is IExecutorBase {
     /// @inheritdoc IExecutorBase
     function getGracePeriod() external view override returns (uint256) {
         return _gracePeriod;
-    }
-
-    /// @inheritdoc IExecutorBase
-    function getMinimumDelay() external view override returns (uint256) {
-        return _minimumDelay;
-    }
-
-    /// @inheritdoc IExecutorBase
-    function getMaximumDelay() external view override returns (uint256) {
-        return _maximumDelay;
     }
 
     /// @inheritdoc IExecutorBase
@@ -253,16 +215,6 @@ abstract contract BridgeExecutorBase is IExecutorBase {
     function _updateGracePeriod(uint256 gracePeriod) internal {
         emit GracePeriodUpdate(_gracePeriod, gracePeriod);
         _gracePeriod = gracePeriod;
-    }
-
-    function _updateMinimumDelay(uint256 minimumDelay) internal {
-        emit MinimumDelayUpdate(_minimumDelay, minimumDelay);
-        _minimumDelay = minimumDelay;
-    }
-
-    function _updateMaximumDelay(uint256 maximumDelay) internal {
-        emit MaximumDelayUpdate(_maximumDelay, maximumDelay);
-        _maximumDelay = maximumDelay;
     }
 
     /**
@@ -378,11 +330,6 @@ abstract contract BridgeExecutorBase is IExecutorBase {
             abi.encode(target, value, signature, data, executionTime, withDelegatecall)
         );
         _queuedActions[actionHash] = false;
-    }
-
-    function _validateDelay(uint256 delay) internal view {
-        if (delay < _minimumDelay) revert DelayShorterThanMin();
-        if (delay > _maximumDelay) revert DelayLongerThanMax();
     }
 
     function _verifyCallResult(bool success, bytes memory returnData)
