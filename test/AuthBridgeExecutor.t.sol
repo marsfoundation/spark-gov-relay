@@ -68,8 +68,6 @@ contract AuthBridgeExecutorTestBase is Test {
         executor = new AuthBridgeExecutor({
             delay:        DELAY,
             gracePeriod:  GRACE_PERIOD,
-            minimumDelay: 0,         // TODO: removing this in next PR
-            maximumDelay: 365 days,  // TODO: removing this in next PR
             guardian:     guardian
         });
         executor.grantRole(executor.AUTHORIZED_BRIDGE_ROLE(), bridge);
@@ -160,16 +158,12 @@ contract AuthBridgeExecutorConstructorTests is AuthBridgeExecutorTestBase {
         executor = new AuthBridgeExecutor({
             delay:        DELAY,
             gracePeriod:  10 minutes - 1,
-            minimumDelay: 0,
-            maximumDelay: 365 days,
             guardian:     guardian
         });
 
         executor = new AuthBridgeExecutor({
             delay:        DELAY,
             gracePeriod:  10 minutes,
-            minimumDelay: 0,
-            maximumDelay: 365 days,
             guardian:     guardian
         });
     }
@@ -184,8 +178,6 @@ contract AuthBridgeExecutorConstructorTests is AuthBridgeExecutorTestBase {
         executor = new AuthBridgeExecutor({
             delay:        DELAY,
             gracePeriod:  GRACE_PERIOD,
-            minimumDelay: 0,
-            maximumDelay: 365 days,
             guardian:     guardian
         });
 

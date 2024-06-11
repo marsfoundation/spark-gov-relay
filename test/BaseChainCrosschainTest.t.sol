@@ -44,8 +44,6 @@ contract BaseChainCrosschainTest is CrosschainTestBase {
         bridgeExecutor = new AuthBridgeExecutor(
             defaultL2BridgeExecutorArgs.delay,
             defaultL2BridgeExecutorArgs.gracePeriod,
-            defaultL2BridgeExecutorArgs.minimumDelay,
-            defaultL2BridgeExecutorArgs.maximumDelay,
             defaultL2BridgeExecutorArgs.guardian
         );
         bridgeReceiver = address(new BridgeExecutorReceiverOptimism(
