@@ -50,7 +50,7 @@ contract OptimismCrosschainTest is CrosschainTestBase {
             defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
             bridgeExecutor
         ));
-        bridgeExecutor.grantRole(bridgeExecutor.AUTHORIZED_BRIDGE_ROLE(), bridgeReceiver);
+        bridgeExecutor.grantRole(bridgeExecutor.DEFAULT_ADMIN_ROLE(), bridgeReceiver);
 
         hostDomain.selectFork();
     }
