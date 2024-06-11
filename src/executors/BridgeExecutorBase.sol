@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.10;
 
+import { Address } from "lib/openzeppelin-contracts/contracts/utils/Address.sol";
+
 import { IExecutorBase } from 'src/interfaces/IExecutorBase.sol';
 
 /**
@@ -11,6 +13,9 @@ import { IExecutorBase } from 'src/interfaces/IExecutorBase.sol';
  * contract with proper access control
  */
 abstract contract BridgeExecutorBase is IExecutorBase {
+
+    using Address for address;
+
     // Minimum allowed grace period, which reduces the risk of having an actions set expire due to network congestion
     uint256 constant MINIMUM_GRACE_PERIOD = 10 minutes;
 
@@ -140,13 +145,9 @@ abstract contract BridgeExecutorBase is IExecutorBase {
         payable
         override
         onlyThis
-        returns (bool, bytes memory)
+        returns (bytes memory)
     {
-        bool success;
-        bytes memory resultData;
-        // solium-disable-next-line security/no-call-value
-        (success, resultData) = target.delegatecall(data);
-        return (success, resultData);
+        return target.functionDelegateCall(data);
     }
 
     /// @inheritdoc IExecutorBase
@@ -307,15 +308,11 @@ abstract contract BridgeExecutorBase is IExecutorBase {
             callData = abi.encodePacked(bytes4(keccak256(bytes(signature))), data);
         }
 
-        bool success;
-        bytes memory resultData;
         if (withDelegatecall) {
-            (success, resultData) = this.executeDelegateCall{value: value}(target, callData);
+            return this.executeDelegateCall{value: value}(target, callData);
         } else {
-            // solium-disable-next-line security/no-call-value
-            (success, resultData) = target.call{value: value}(callData);
+            return target.functionCallWithValue(callData, value);
         }
-        return _verifyCallResult(success, resultData);
     }
 
     function _cancelTransaction(
@@ -332,24 +329,4 @@ abstract contract BridgeExecutorBase is IExecutorBase {
         _queuedActions[actionHash] = false;
     }
 
-    function _verifyCallResult(bool success, bytes memory returnData)
-        private pure returns (bytes memory)
-    {
-        if (success) {
-            return returnData;
-        } else {
-            // Look for revert reason and bubble it up if present
-            if (returnData.length > 0) {
-                // The easiest way to bubble the revert reason is using memory via assembly
-
-                // solhint-disable-next-line no-inline-assembly
-                assembly {
-                    let returndata_size := mload(returnData)
-                    revert(add(32, returnData), returndata_size)
-                }
-            } else {
-                revert FailedActionExecution();
-            }
-        }
-    }
 }
