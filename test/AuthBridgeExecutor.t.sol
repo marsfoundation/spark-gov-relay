@@ -362,7 +362,7 @@ contract AuthBridgeExecutorExecuteTests is AuthBridgeExecutorTestBase {
         executor.execute(0);
     }
 
-    function test_execute_evm_error() public {
+    function test_execute_delegateCallEvmError() public {
         // Trigger some evm error like trying to call a non-payable function
         Action memory action = _getDefaultAction();
         action.values[0] = 1 ether;
@@ -370,11 +370,11 @@ contract AuthBridgeExecutorExecuteTests is AuthBridgeExecutorTestBase {
         skip(DELAY);
         vm.deal(address(executor), 1 ether);
 
-        vm.expectRevert(abi.encodeWithSignature("FailedActionExecution()"));
+        vm.expectRevert(abi.encodeWithSignature("FailedInnerCall()"));
         executor.execute(0);
     }
 
-    function test_execute_revert_error() public {
+    function test_execute_delegateCallRevertError() public {
         Action memory action = _getDefaultAction();
         action.targets[0] = address(new RevertingPayload());
         _queueAction(action);
@@ -382,6 +382,52 @@ contract AuthBridgeExecutorExecuteTests is AuthBridgeExecutorTestBase {
 
         // Should return the underlying error message
         vm.expectRevert("An error occurred");
+        executor.execute(0);
+    }
+
+    function test_execute_delegateCallEmptyContract() public {
+        Action memory action = _getDefaultAction();
+        action.targets[0] = makeAddr("emptyContract");
+        _queueAction(action);
+        skip(DELAY);
+
+        vm.expectRevert(abi.encodeWithSignature("AddressEmptyCode(address)", action.targets[0]));
+        executor.execute(0);
+    }
+
+    function test_execute_callEvmError() public {
+        // Trigger some evm error like trying to call a non-payable function
+        Action memory action = _getDefaultAction();
+        action.values[0]            = 1 ether;
+        action.withDelegatecalls[0] = false;
+        _queueAction(action);
+        skip(DELAY);
+        vm.deal(address(executor), 1 ether);
+
+        vm.expectRevert(abi.encodeWithSignature("FailedInnerCall()"));
+        executor.execute(0);
+    }
+
+    function test_execute_callRevertError() public {
+        Action memory action = _getDefaultAction();
+        action.targets[0]           = address(new RevertingPayload());
+        action.withDelegatecalls[0] = false;
+        _queueAction(action);
+        skip(DELAY);
+
+        // Should return the underlying error message
+        vm.expectRevert("An error occurred");
+        executor.execute(0);
+    }
+
+    function test_execute_callEmptyContract() public {
+        Action memory action = _getDefaultAction();
+        action.targets[0]           = makeAddr("emptyContract");
+        action.withDelegatecalls[0] = false;
+        _queueAction(action);
+        skip(DELAY);
+
+        vm.expectRevert(abi.encodeWithSignature("AddressEmptyCode(address)", action.targets[0]));
         executor.execute(0);
     }
 

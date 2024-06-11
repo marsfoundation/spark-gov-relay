@@ -150,13 +150,12 @@ interface IExecutorBase {
      * @notice Allows to delegatecall a given target with an specific amount of value
      * @dev This function is external so it allows to specify a defined msg.value for the delegate call, reducing
      * the risk that a delegatecall gets executed with more value than intended
-     * @return True if the delegate call was successful, false otherwise
      * @return The bytes returned by the delegate call
      **/
     function executeDelegateCall(address target, bytes calldata data)
         external
         payable
-        returns (bool, bytes memory);
+        returns (bytes memory);
 
     /**
      * @notice Allows to receive funds into the executor
