@@ -11,8 +11,6 @@ import { BridgeExecutorBase }  from './BridgeExecutorBase.sol';
  * @notice Queue up proposals from an authorized bridge.
  */
 contract AuthBridgeExecutor is IAuthBridgeExecutor, AccessControl, BridgeExecutorBase {
-
-    bytes32 public constant AUTHORIZED_BRIDGE_ROLE = keccak256('AUTHORIZED_BRIDGE_ROLE');
     
     /**
      * @dev Constructor
@@ -33,7 +31,6 @@ contract AuthBridgeExecutor is IAuthBridgeExecutor, AccessControl, BridgeExecuto
         )
     {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setRoleAdmin(AUTHORIZED_BRIDGE_ROLE, DEFAULT_ADMIN_ROLE);
     }
 
     /// @inheritdoc IAuthBridgeExecutor
@@ -43,7 +40,7 @@ contract AuthBridgeExecutor is IAuthBridgeExecutor, AccessControl, BridgeExecuto
         string[] memory signatures,
         bytes[] memory calldatas,
         bool[] memory withDelegatecalls
-    ) external onlyRole(AUTHORIZED_BRIDGE_ROLE) {
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _queue(targets, values, signatures, calldatas, withDelegatecalls);
     }
     
