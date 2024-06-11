@@ -396,7 +396,6 @@ contract AuthBridgeExecutorExecuteTests is AuthBridgeExecutorTestBase {
     }
 
     function test_execute_delegateCallEmptyContract() public {
-        // Trigger some evm error like trying to call a non-payable function
         Action memory action = _getDefaultAction();
         action.targets[0] = makeAddr("emptyContract");
         _queueAction(action);
@@ -432,7 +431,6 @@ contract AuthBridgeExecutorExecuteTests is AuthBridgeExecutorTestBase {
     }
 
     function test_execute_callEmptyContract() public {
-        // Trigger some evm error like trying to call a non-payable function
         Action memory action = _getDefaultAction();
         action.targets[0]           = makeAddr("emptyContract");
         action.withDelegatecalls[0] = false;
