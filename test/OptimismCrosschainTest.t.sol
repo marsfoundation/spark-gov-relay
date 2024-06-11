@@ -41,15 +41,13 @@ contract OptimismCrosschainTest is CrosschainTestBase {
         bridgeExecutor = new AuthBridgeExecutor(
             defaultL2BridgeExecutorArgs.delay,
             defaultL2BridgeExecutorArgs.gracePeriod,
-            defaultL2BridgeExecutorArgs.minimumDelay,
-            defaultL2BridgeExecutorArgs.maximumDelay,
             defaultL2BridgeExecutorArgs.guardian
         );
         bridgeReceiver = address(new OptimismReceiver(
             defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
             address(bridgeExecutor)
         ));
-        bridgeExecutor.grantRole(bridgeExecutor.AUTHORIZED_BRIDGE_ROLE(), bridgeReceiver);
+        bridgeExecutor.grantRole(bridgeExecutor.DEFAULT_ADMIN_ROLE(), bridgeReceiver);
 
         bridge.source.selectFork();
     }

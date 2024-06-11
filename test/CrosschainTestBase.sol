@@ -20,8 +20,6 @@ struct L2BridgeExecutorArguments {
     address ethereumGovernanceExecutor;
     uint256 delay;
     uint256 gracePeriod;
-    uint256 minimumDelay;
-    uint256 maximumDelay;
     address guardian;
 }
 
@@ -75,8 +73,6 @@ abstract contract CrosschainTestBase is Test {
         ethereumGovernanceExecutor: L1_EXECUTOR,
         delay:                      600,
         gracePeriod:                1200,
-        minimumDelay:               0,
-        maximumDelay:               2400,
         guardian:                   GUARDIAN
     });
 
@@ -320,14 +316,6 @@ abstract contract CrosschainTestBase is Test {
             defaultL2BridgeExecutorArgs.gracePeriod
         );
         assertEq(
-            bridgeExecutor.getMinimumDelay(),
-            defaultL2BridgeExecutorArgs.minimumDelay
-        );
-        assertEq(
-            bridgeExecutor.getMaximumDelay(),
-            defaultL2BridgeExecutorArgs.maximumDelay
-        );
-        assertEq(
             bridgeExecutor.getGuardian(),
             defaultL2BridgeExecutorArgs.guardian
         );
@@ -336,16 +324,12 @@ abstract contract CrosschainTestBase is Test {
             ethereumGovernanceExecutor: defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
             delay:                      1200,
             gracePeriod:                1800,
-            minimumDelay:               100,
-            maximumDelay:               3600,
             guardian:                   makeAddr('newGuardian')
         });
 
         IPayload reconfigurationPayload = IPayload(new ReconfigurationPayload(
             newL2BridgeExecutorParams.delay,
             newL2BridgeExecutorParams.gracePeriod,
-            newL2BridgeExecutorParams.minimumDelay,
-            newL2BridgeExecutorParams.maximumDelay,
             newL2BridgeExecutorParams.guardian
         ));
 
@@ -375,14 +359,6 @@ abstract contract CrosschainTestBase is Test {
         assertEq(
             bridgeExecutor.getGracePeriod(),
             newL2BridgeExecutorParams.gracePeriod
-        );
-        assertEq(
-            bridgeExecutor.getMinimumDelay(),
-            newL2BridgeExecutorParams.minimumDelay
-        );
-        assertEq(
-            bridgeExecutor.getMaximumDelay(),
-            newL2BridgeExecutorParams.maximumDelay
         );
         assertEq(
             bridgeExecutor.getGuardian(),

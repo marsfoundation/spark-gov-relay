@@ -68,13 +68,10 @@ contract AuthBridgeExecutorTestBase is Test {
         executor = new AuthBridgeExecutor({
             delay:        DELAY,
             gracePeriod:  GRACE_PERIOD,
-            minimumDelay: 0,         // TODO: removing this in next PR
-            maximumDelay: 365 days,  // TODO: removing this in next PR
             guardian:     guardian
         });
-        executor.grantRole(executor.AUTHORIZED_BRIDGE_ROLE(), bridge);
-        executor.grantRole(executor.DEFAULT_ADMIN_ROLE(),     bridge);
-        executor.revokeRole(executor.DEFAULT_ADMIN_ROLE(),    address(this));
+        executor.grantRole(executor.DEFAULT_ADMIN_ROLE(),  bridge);
+        executor.revokeRole(executor.DEFAULT_ADMIN_ROLE(), address(this));
     }
 
     /******************************************************************************************************************/
@@ -160,16 +157,12 @@ contract AuthBridgeExecutorConstructorTests is AuthBridgeExecutorTestBase {
         executor = new AuthBridgeExecutor({
             delay:        DELAY,
             gracePeriod:  10 minutes - 1,
-            minimumDelay: 0,
-            maximumDelay: 365 days,
             guardian:     guardian
         });
 
         executor = new AuthBridgeExecutor({
             delay:        DELAY,
             gracePeriod:  10 minutes,
-            minimumDelay: 0,
-            maximumDelay: 365 days,
             guardian:     guardian
         });
     }
@@ -184,8 +177,6 @@ contract AuthBridgeExecutorConstructorTests is AuthBridgeExecutorTestBase {
         executor = new AuthBridgeExecutor({
             delay:        DELAY,
             gracePeriod:  GRACE_PERIOD,
-            minimumDelay: 0,
-            maximumDelay: 365 days,
             guardian:     guardian
         });
 
@@ -194,15 +185,14 @@ contract AuthBridgeExecutorConstructorTests is AuthBridgeExecutorTestBase {
         assertEq(executor.getGuardian(),    guardian);
 
         assertEq(executor.hasRole(executor.DEFAULT_ADMIN_ROLE(), address(this)), true);
-        assertEq(executor.getRoleAdmin(executor.AUTHORIZED_BRIDGE_ROLE()),       executor.DEFAULT_ADMIN_ROLE());
     }
 
 }
 
 contract AuthBridgeExecutorQueueTests is AuthBridgeExecutorTestBase {
 
-    function test_queue_onlyBridge() public {
-        vm.expectRevert(abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", address(this), executor.AUTHORIZED_BRIDGE_ROLE()));
+    function test_queue_onlyDefaultAdmin() public {
+        vm.expectRevert(abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", address(this), executor.DEFAULT_ADMIN_ROLE()));
         executor.queue(new address[](0), new uint256[](0), new string[](0), new bytes[](0), new bool[](0));
     }
 
