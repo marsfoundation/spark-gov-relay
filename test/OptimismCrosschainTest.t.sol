@@ -35,7 +35,10 @@ contract OptimismCrosschainTest is CrosschainTestBase {
     }
 
     function setUp() public {
-        bridge = OptimismBridgeTesting.createNativeBridge(getChain('mainnet').createFork(), getChain('optimism').createFork());
+        bridge = OptimismBridgeTesting.createNativeBridge(
+            getChain('mainnet').createFork(),
+            getChain('optimism').createFork()
+        );
 
         bridge.destination.selectFork();
         bridgeExecutor = new AuthBridgeExecutor(

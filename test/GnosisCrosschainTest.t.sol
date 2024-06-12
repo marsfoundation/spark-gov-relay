@@ -34,7 +34,10 @@ contract GnosisCrosschainTest is CrosschainTestBase {
     }
 
     function setUp() public {
-        bridge = AMBBridgeTesting.createGnosisBridge(getChain('mainnet').createFork(), getChain('gnosis_chain').createFork());
+        bridge = AMBBridgeTesting.createGnosisBridge(
+            getChain('mainnet').createFork(),
+            getChain('gnosis_chain').createFork()
+        );
 
         bridge.destination.selectFork();
         bridgeExecutor = new AuthBridgeExecutor(

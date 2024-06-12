@@ -37,7 +37,10 @@ contract ArbitrumOneCrosschainTest is CrosschainTestBase {
     }
 
     function setUp() public {
-        bridge = ArbitrumBridgeTesting.createNativeBridge(getChain('mainnet').createFork(), getChain('arbitrum_one').createFork());
+        bridge = ArbitrumBridgeTesting.createNativeBridge(
+            getChain('mainnet').createFork(),
+            getChain('arbitrum_one').createFork()
+        );
 
         bridge.destination.selectFork();
         bridgeExecutor = new AuthBridgeExecutor(
