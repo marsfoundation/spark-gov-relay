@@ -1,17 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import 'forge-std/Test.sol';
+import './CrosschainTestBase.sol';
 
-import { Domain, ArbitrumDomain } from 'xchain-helpers/testing/ArbitrumDomain.sol';
-import { XChainForwarders }       from 'xchain-helpers/XChainForwarders.sol';
-
-import { AuthBridgeExecutor }             from 'src/executors/AuthBridgeExecutor.sol';
-import { BridgeExecutorReceiverArbitrum } from 'src/receivers/BridgeExecutorReceiverArbitrum.sol';
-
-import { IPayload } from './interfaces/IPayload.sol';
-
-import { CrosschainPayload, CrosschainTestBase } from './CrosschainTestBase.sol';
+import { ArbitrumBridgeTesting } from 'lib/xchain-helpers/src/testing/bridges/ArbitrumBridgeTesting.sol';
+import { ArbitrumForwarder }     from 'lib/xchain-helpers/src/forwarders/ArbitrumForwarder.sol';
+import { ArbitrumReceiver }      from 'lib/xchain-helpers/src/receivers/ArbitrumReceiver.sol';
 
 contract ArbitrumOneCrosschainPayload is CrosschainPayload {
 
@@ -19,7 +13,8 @@ contract ArbitrumOneCrosschainPayload is CrosschainPayload {
         CrosschainPayload(_targetPayload, _bridgeReceiver) {}
 
     function execute() external override {
-        XChainForwarders.sendMessageArbitrumOne(
+        ArbitrumForwarder.sendMessageL1toL2(
+            ArbitrumForwarder.L1_CROSS_DOMAIN_ARBITRUM_ONE,
             bridgeReceiver,
             encodeCrosschainExecutionMessage(),
             1_000_000,
@@ -32,6 +27,9 @@ contract ArbitrumOneCrosschainPayload is CrosschainPayload {
 
 contract ArbitrumOneCrosschainTest is CrosschainTestBase {
 
+    using DomainHelpers         for *;
+    using ArbitrumBridgeTesting for *;
+
     function deployCrosschainPayload(IPayload targetPayload, address bridgeReceiver)
         public override returns (IPayload)
     {
@@ -39,33 +37,29 @@ contract ArbitrumOneCrosschainTest is CrosschainTestBase {
     }
 
     function setUp() public {
-        hostDomain = new Domain(getChain('mainnet'));
-        bridgedDomain = new ArbitrumDomain(getChain('arbitrum_one'), hostDomain);
+        bridge = ArbitrumBridgeTesting.createNativeBridge(
+            getChain('mainnet').createFork(),
+            getChain('arbitrum_one').createFork()
+        );
 
-        bridgedDomain.selectFork();
+        bridge.destination.selectFork();
         bridgeExecutor = new AuthBridgeExecutor(
             defaultL2BridgeExecutorArgs.delay,
             defaultL2BridgeExecutorArgs.gracePeriod,
             defaultL2BridgeExecutorArgs.guardian
         );
-        bridgeReceiver = address(new BridgeExecutorReceiverArbitrum(
+        bridgeReceiver = address(new ArbitrumReceiver(
             defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
-            bridgeExecutor
+            address(bridgeExecutor)
         ));
         bridgeExecutor.grantRole(bridgeExecutor.DEFAULT_ADMIN_ROLE(), bridgeReceiver);
 
-        hostDomain.selectFork();
+        bridge.source.selectFork();
         vm.deal(L1_EXECUTOR, 0.01 ether);
     }
 
-    function test_constructor_receiver() public {
-        BridgeExecutorReceiverArbitrum receiver = new BridgeExecutorReceiverArbitrum(
-            defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
-            bridgeExecutor
-        );
-
-        assertEq(receiver.l1Authority(),       defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor);
-        assertEq(address(receiver.executor()), address(bridgeExecutor));
+    function relayMessagesAcrossBridge() internal override {
+        bridge.relayMessagesToDestination(true);
     }
 
 }

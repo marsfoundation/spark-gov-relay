@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 
-import { BridgedDomain } from 'xchain-helpers/testing/BridgedDomain.sol';
-import { Domain }        from 'xchain-helpers/testing/Domain.sol';
+import { Bridge }        from 'lib/xchain-helpers/src/testing/Bridge.sol';
+import { DomainHelpers } from 'lib/xchain-helpers/src/testing/Domain.sol';
 
 import { IAuthBridgeExecutor } from 'src/interfaces/IAuthBridgeExecutor.sol';
 import { IExecutorBase }       from 'src/interfaces/IExecutorBase.sol';
@@ -60,6 +60,9 @@ abstract contract CrosschainPayload is IPayload {
 }
 
 abstract contract CrosschainTestBase is Test {
+
+    using DomainHelpers for *;
+
     event TestEvent();
 
     address public constant L1_EXECUTOR    = 0x3300f198988e4C9C63F75dF86De36421f06af8c4;
@@ -73,20 +76,20 @@ abstract contract CrosschainTestBase is Test {
         guardian:                   GUARDIAN
     });
 
-    Domain        public hostDomain;
-    BridgedDomain public bridgedDomain;
+    Bridge public bridge;
 
     AuthBridgeExecutor public bridgeExecutor;
     address            public bridgeReceiver;
 
     function deployCrosschainPayload(IPayload targetPayload, address bridgeReceiver) public virtual returns (IPayload);
+    function relayMessagesAcrossBridge() internal virtual;
 
     function preparePayloadExecution() public {
-        bridgedDomain.selectFork();
+        bridge.destination.selectFork();
 
         IPayload targetPayload = IPayload(new PayloadWithEmit());
 
-        hostDomain.selectFork();
+        bridge.source.selectFork();
 
         IPayload crosschainPayload = deployCrosschainPayload(
             targetPayload,
@@ -99,7 +102,7 @@ abstract contract CrosschainTestBase is Test {
             abi.encodeWithSelector(IPayload.execute.selector)
         );
 
-        bridgedDomain.relayFromHost(true);
+        relayMessagesAcrossBridge();
     }
 
     function testFuzz_basicCrosschainPayloadExecution(uint256 delay) public {
@@ -302,7 +305,7 @@ abstract contract CrosschainTestBase is Test {
     }
 
     function test_selfReconfiguration() public {
-        bridgedDomain.selectFork();
+        bridge.destination.selectFork();
 
         assertEq(
             bridgeExecutor.getDelay(),
@@ -330,7 +333,7 @@ abstract contract CrosschainTestBase is Test {
             newL2BridgeExecutorParams.guardian
         ));
 
-        hostDomain.selectFork();
+        bridge.source.selectFork();
 
         IPayload crosschainPayload = deployCrosschainPayload(
             reconfigurationPayload,
@@ -343,7 +346,7 @@ abstract contract CrosschainTestBase is Test {
             abi.encodeWithSelector(IPayload.execute.selector)
         );
 
-        bridgedDomain.relayFromHost(true);
+        relayMessagesAcrossBridge();
 
         skip(defaultL2BridgeExecutorArgs.delay);
 
@@ -362,4 +365,5 @@ abstract contract CrosschainTestBase is Test {
             newL2BridgeExecutorParams.guardian
         );
     }
+
 }

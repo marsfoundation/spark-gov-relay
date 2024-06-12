@@ -1,17 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import 'forge-std/Test.sol';
+import './CrosschainTestBase.sol';
 
-import { Domain, OptimismDomain } from 'xchain-helpers/testing/OptimismDomain.sol';
-import { XChainForwarders }       from 'xchain-helpers/XChainForwarders.sol';
-
-import { AuthBridgeExecutor }             from 'src/executors/AuthBridgeExecutor.sol';
-import { BridgeExecutorReceiverOptimism } from 'src/receivers/BridgeExecutorReceiverOptimism.sol';
-
-import { IPayload } from './interfaces/IPayload.sol';
-
-import { CrosschainPayload, CrosschainTestBase } from './CrosschainTestBase.sol';
+import { OptimismBridgeTesting } from 'lib/xchain-helpers/src/testing/bridges/OptimismBridgeTesting.sol';
+import { OptimismForwarder }     from 'lib/xchain-helpers/src/forwarders/OptimismForwarder.sol';
+import { OptimismReceiver }      from 'lib/xchain-helpers/src/receivers/OptimismReceiver.sol';
 
 contract BaseChainCrosschainPayload is CrosschainPayload {
 
@@ -19,7 +13,8 @@ contract BaseChainCrosschainPayload is CrosschainPayload {
         CrosschainPayload(_targetPayload, _bridgeReceiver) {}
 
     function execute() external override {
-        XChainForwarders.sendMessageBase(
+        OptimismForwarder.sendMessageL1toL2(
+            OptimismForwarder.L1_CROSS_DOMAIN_BASE,
             bridgeReceiver,
             encodeCrosschainExecutionMessage(),
             1_000_000
@@ -30,6 +25,9 @@ contract BaseChainCrosschainPayload is CrosschainPayload {
 
 contract BaseChainCrosschainTest is CrosschainTestBase {
 
+    using DomainHelpers         for *;
+    using OptimismBridgeTesting for *;
+
     function deployCrosschainPayload(IPayload targetPayload, address bridgeReceiver)
         public override returns (IPayload)
     {
@@ -37,22 +35,28 @@ contract BaseChainCrosschainTest is CrosschainTestBase {
     }
 
     function setUp() public {
-        hostDomain = new Domain(getChain('mainnet'));
-        bridgedDomain = new OptimismDomain(getChain('base'), hostDomain);
+        bridge = OptimismBridgeTesting.createNativeBridge(
+            getChain('mainnet').createFork(),
+            getChain('base').createFork()
+        );
 
-        bridgedDomain.selectFork();
+        bridge.destination.selectFork();
         bridgeExecutor = new AuthBridgeExecutor(
             defaultL2BridgeExecutorArgs.delay,
             defaultL2BridgeExecutorArgs.gracePeriod,
             defaultL2BridgeExecutorArgs.guardian
         );
-        bridgeReceiver = address(new BridgeExecutorReceiverOptimism(
+        bridgeReceiver = address(new OptimismReceiver(
             defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
-            bridgeExecutor
+            address(bridgeExecutor)
         ));
         bridgeExecutor.grantRole(bridgeExecutor.DEFAULT_ADMIN_ROLE(), bridgeReceiver);
 
-        hostDomain.selectFork();
+        bridge.source.selectFork();
+    }
+
+    function relayMessagesAcrossBridge() internal override {
+        bridge.relayMessagesToDestination(true);
     }
 
 }

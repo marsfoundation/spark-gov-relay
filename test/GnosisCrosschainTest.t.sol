@@ -1,17 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import 'forge-std/Test.sol';
+import './CrosschainTestBase.sol';
 
-import { Domain, GnosisDomain } from 'xchain-helpers/testing/GnosisDomain.sol';
-import { XChainForwarders }     from 'xchain-helpers/XChainForwarders.sol';
-
-import { AuthBridgeExecutor }           from 'src/executors/AuthBridgeExecutor.sol';
-import { BridgeExecutorReceiverGnosis } from 'src/receivers/BridgeExecutorReceiverGnosis.sol';
-
-import { IPayload } from './interfaces/IPayload.sol';
-
-import { CrosschainPayload, CrosschainTestBase } from './CrosschainTestBase.sol';
+import { AMBBridgeTesting } from 'lib/xchain-helpers/src/testing/bridges/AMBBridgeTesting.sol';
+import { AMBForwarder }     from 'lib/xchain-helpers/src/forwarders/AMBForwarder.sol';
+import { AMBReceiver }      from 'lib/xchain-helpers/src/receivers/AMBReceiver.sol';
 
 contract GnosisCrosschainPayload is CrosschainPayload {
 
@@ -19,7 +13,7 @@ contract GnosisCrosschainPayload is CrosschainPayload {
         CrosschainPayload(_targetPayload, _bridgeReceiver) {}
 
     function execute() external override {
-        XChainForwarders.sendMessageGnosis(
+        AMBForwarder.sendMessageEthereumToGnosisChain(
             bridgeReceiver,
             encodeCrosschainExecutionMessage(),
             1_000_000
@@ -30,7 +24,8 @@ contract GnosisCrosschainPayload is CrosschainPayload {
 
 contract GnosisCrosschainTest is CrosschainTestBase {
 
-    address constant AMB = 0x75Df5AF045d91108662D8080fD1FEFAd6aA0bb59;
+    using DomainHelpers    for *;
+    using AMBBridgeTesting for *;
 
     function deployCrosschainPayload(IPayload targetPayload, address bridgeReceiver)
         public override returns (IPayload)
@@ -39,38 +34,30 @@ contract GnosisCrosschainTest is CrosschainTestBase {
     }
 
     function setUp() public {
-        hostDomain = new Domain(getChain('mainnet'));
-        bridgedDomain = new GnosisDomain(getChain('gnosis_chain'), hostDomain);
+        bridge = AMBBridgeTesting.createGnosisBridge(
+            getChain('mainnet').createFork(),
+            getChain('gnosis_chain').createFork()
+        );
 
-        bridgedDomain.selectFork();
+        bridge.destination.selectFork();
         bridgeExecutor = new AuthBridgeExecutor(
             defaultL2BridgeExecutorArgs.delay,
             defaultL2BridgeExecutorArgs.gracePeriod,
             defaultL2BridgeExecutorArgs.guardian
         );
-        bridgeReceiver = address(new BridgeExecutorReceiverGnosis(
-            AMB,
-            1,  // Ethereum chainid
+        bridgeReceiver = address(new AMBReceiver(
+            AMBBridgeTesting.getGnosisMessengerFromChainAlias(bridge.destination.chain.chainAlias),
+            bytes32(uint256(1)),  // Ethereum chainid
             defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
-            bridgeExecutor
+            address(bridgeExecutor)
         ));
         bridgeExecutor.grantRole(bridgeExecutor.DEFAULT_ADMIN_ROLE(), bridgeReceiver);
 
-        hostDomain.selectFork();
+        bridge.source.selectFork();
     }
 
-    function test_constructor_receiver() public {
-        BridgeExecutorReceiverGnosis receiver = new BridgeExecutorReceiverGnosis(
-            AMB,
-            1,
-            defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
-            bridgeExecutor
-        );
-
-        assertEq(address(receiver.l2CrossDomain()), AMB);
-        assertEq(receiver.chainId(),                bytes32(uint256(1)));
-        assertEq(receiver.l1Authority(),            defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor);
-        assertEq(address(receiver.executor()),      address(bridgeExecutor));
+    function relayMessagesAcrossBridge() internal override {
+        bridge.relayMessagesToDestination(true);
     }
 
 }
