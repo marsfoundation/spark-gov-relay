@@ -314,11 +314,11 @@ abstract contract CrosschainTestBase is Test {
         });
 
         assertEq(
-            bridgeExecutor.getDelay(),
+            bridgeExecutor.delay(),
             defaultL2BridgeExecutorArgs.delay
         );
         assertEq(
-            bridgeExecutor.getGracePeriod(),
+            bridgeExecutor.gracePeriod(),
             defaultL2BridgeExecutorArgs.gracePeriod
         );
         assertEq(
@@ -357,11 +357,11 @@ abstract contract CrosschainTestBase is Test {
         bridgeExecutor.execute(0);
 
         assertEq(
-            bridgeExecutor.getDelay(),
+            bridgeExecutor.delay(),
             newL2BridgeExecutorParams.delay
         );
         assertEq(
-            bridgeExecutor.getGracePeriod(),
+            bridgeExecutor.gracePeriod(),
             newL2BridgeExecutorParams.gracePeriod
         );
         assertEq(
