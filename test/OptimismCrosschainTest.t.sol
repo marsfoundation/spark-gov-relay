@@ -41,7 +41,7 @@ contract OptimismCrosschainTest is CrosschainTestBase {
         );
 
         bridge.destination.selectFork();
-        bridgeExecutor = new AuthBridgeExecutor(
+        bridgeExecutor = new Executor(
             defaultL2BridgeExecutorArgs.delay,
             defaultL2BridgeExecutorArgs.gracePeriod,
             defaultL2BridgeExecutorArgs.guardian

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.10;
 
-import { IExecutorBase } from '../../src/interfaces/IExecutorBase.sol';
+import { IExecutor } from 'src/interfaces/IExecutor.sol';
 
 import { IPayload } from '../interfaces/IPayload.sol';
 
@@ -25,9 +25,9 @@ contract ReconfigurationPayload is IPayload {
     }
 
     function execute() external override {
-        IExecutorBase(address(this)).updateDelay(getNewDelay());
-        IExecutorBase(address(this)).updateGracePeriod(getNewGracePeriod());
-        IExecutorBase(address(this)).updateGuardian(getNewGuardian());
+        IExecutor(address(this)).updateDelay(getNewDelay());
+        IExecutor(address(this)).updateGracePeriod(getNewGracePeriod());
+        IExecutor(address(this)).updateGuardian(getNewGuardian());
     }
 
     function getNewDelay() public view returns (uint256) {

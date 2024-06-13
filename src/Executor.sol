@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.10;
 
-import { Address } from "lib/openzeppelin-contracts/contracts/utils/Address.sol";
+import { AccessControl } from "openzeppelin-contracts/contracts/access/AccessControl.sol";
+import { Address }       from "openzeppelin-contracts/contracts/utils/Address.sol";
 
-import { IExecutorBase } from 'src/interfaces/IExecutorBase.sol';
+import { IExecutor } from './interfaces/IExecutor.sol';
 
 /**
- * @title BridgeExecutorBase
+ * @title Executor
  * @author Aave
- * @notice Abstract contract that implements basic executor functionality
- * @dev It does not implement an external `queue` function. This should instead be done in the inheriting
- * contract with proper access control
+ * @notice Executor which queues up message calls and executes them after an optional delay
  */
-abstract contract BridgeExecutorBase is IExecutorBase {
+contract Executor is IExecutor, AccessControl {
 
     using Address for address;
 
@@ -68,172 +67,18 @@ abstract contract BridgeExecutorBase is IExecutorBase {
         _updateDelay(delay);
         _updateGracePeriod(gracePeriod);
         _updateGuardian(guardian);
+
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    /// @inheritdoc IExecutorBase
-    function execute(uint256 actionsSetId) external payable override {
-        if (getCurrentState(actionsSetId) != ActionsSetState.Queued) revert OnlyQueuedActions();
-
-        ActionsSet storage actionsSet = _actionsSets[actionsSetId];
-        if (block.timestamp < actionsSet.executionTime) revert TimelockNotFinished();
-
-        actionsSet.executed = true;
-        uint256 actionCount = actionsSet.targets.length;
-
-        bytes[] memory returnedData = new bytes[](actionCount);
-        for (uint256 i = 0; i < actionCount; ) {
-            returnedData[i] = _executeTransaction(
-                actionsSet.targets[i],
-                actionsSet.values[i],
-                actionsSet.signatures[i],
-                actionsSet.calldatas[i],
-                actionsSet.executionTime,
-                actionsSet.withDelegatecalls[i]
-            );
-            unchecked {
-                ++i;
-            }
-        }
-
-        emit ActionsSetExecuted(actionsSetId, msg.sender, returnedData);
-    }
-
-    /// @inheritdoc IExecutorBase
-    function cancel(uint256 actionsSetId) external override onlyGuardian {
-        if (getCurrentState(actionsSetId) != ActionsSetState.Queued) revert OnlyQueuedActions();
-
-        ActionsSet storage actionsSet = _actionsSets[actionsSetId];
-        actionsSet.canceled = true;
-
-        uint256 targetsLength = actionsSet.targets.length;
-        for (uint256 i = 0; i < targetsLength; ) {
-            _cancelTransaction(
-                actionsSet.targets[i],
-                actionsSet.values[i],
-                actionsSet.signatures[i],
-                actionsSet.calldatas[i],
-                actionsSet.executionTime,
-                actionsSet.withDelegatecalls[i]
-            );
-            unchecked {
-                ++i;
-            }
-        }
-
-        emit ActionsSetCanceled(actionsSetId);
-    }
-
-    /// @inheritdoc IExecutorBase
-    function updateGuardian(address guardian) external override onlyThis {
-        _updateGuardian(guardian);
-    }
-
-    /// @inheritdoc IExecutorBase
-    function updateDelay(uint256 delay) external override onlyThis {
-        _updateDelay(delay);
-    }
-
-    /// @inheritdoc IExecutorBase
-    function updateGracePeriod(uint256 gracePeriod) external override onlyThis {
-        if (gracePeriod < MINIMUM_GRACE_PERIOD) revert GracePeriodTooShort();
-        _updateGracePeriod(gracePeriod);
-    }
-
-    /// @inheritdoc IExecutorBase
-    function executeDelegateCall(address target, bytes calldata data)
-        external
-        payable
-        override
-        onlyThis
-        returns (bytes memory)
-    {
-        return target.functionDelegateCall(data);
-    }
-
-    /// @inheritdoc IExecutorBase
-    function receiveFunds() external payable override {}
-
-    /// @inheritdoc IExecutorBase
-    function getDelay() external view override returns (uint256) {
-        return _delay;
-    }
-
-    /// @inheritdoc IExecutorBase
-    function getGracePeriod() external view override returns (uint256) {
-        return _gracePeriod;
-    }
-
-    /// @inheritdoc IExecutorBase
-    function getGuardian() external view override returns (address) {
-        return _guardian;
-    }
-
-    /// @inheritdoc IExecutorBase
-    function getActionsSetCount() external view override returns (uint256) {
-        return _actionsSetCounter;
-    }
-
-    /// @inheritdoc IExecutorBase
-    function getActionsSetById(uint256 actionsSetId)
-        external
-        view
-        override
-        returns (ActionsSet memory)
-    {
-        return _actionsSets[actionsSetId];
-    }
-
-    /// @inheritdoc IExecutorBase
-    function getCurrentState(uint256 actionsSetId) public view override returns (ActionsSetState) {
-        if (_actionsSetCounter <= actionsSetId) revert InvalidActionsSetId();
-        ActionsSet storage actionsSet = _actionsSets[actionsSetId];
-        if (actionsSet.canceled) {
-            return ActionsSetState.Canceled;
-        } else if (actionsSet.executed) {
-            return ActionsSetState.Executed;
-        } else if (block.timestamp > actionsSet.executionTime + _gracePeriod) {
-            return ActionsSetState.Expired;
-        } else {
-            return ActionsSetState.Queued;
-        }
-    }
-
-    /// @inheritdoc IExecutorBase
-    function isActionQueued(bytes32 actionHash) public view override returns (bool) {
-        return _queuedActions[actionHash];
-    }
-
-    function _updateGuardian(address guardian) internal {
-        emit GuardianUpdate(_guardian, guardian);
-        _guardian = guardian;
-    }
-
-    function _updateDelay(uint256 delay) internal {
-        emit DelayUpdate(_delay, delay);
-        _delay = delay;
-    }
-
-    function _updateGracePeriod(uint256 gracePeriod) internal {
-        emit GracePeriodUpdate(_gracePeriod, gracePeriod);
-        _gracePeriod = gracePeriod;
-    }
-
-    /**
-    * @notice Queue an ActionsSet
-    * @dev If a signature is empty, calldata is used for the execution, calldata is appended to signature otherwise
-    * @param targets Array of targets to be called by the actions set
-    * @param values Array of values to pass in each call by the actions set
-    * @param signatures Array of function signatures to encode in each call (can be empty)
-    * @param calldatas Array of calldata to pass in each call (can be empty)
-    * @param withDelegatecalls Array of whether to delegatecall for each call
-    **/
-    function _queue(
+    /// @inheritdoc IExecutor
+    function queue(
         address[] memory targets,
         uint256[] memory values,
         string[] memory signatures,
         bytes[] memory calldatas,
         bool[] memory withDelegatecalls
-    ) internal {
+    ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
         if (targets.length == 0) revert EmptyTargets();
         uint256 targetsLength = targets.length;
         if (
@@ -284,6 +129,154 @@ abstract contract BridgeExecutorBase is IExecutorBase {
             withDelegatecalls,
             executionTime
         );
+    }
+
+    /// @inheritdoc IExecutor
+    function execute(uint256 actionsSetId) external payable override {
+        if (getCurrentState(actionsSetId) != ActionsSetState.Queued) revert OnlyQueuedActions();
+
+        ActionsSet storage actionsSet = _actionsSets[actionsSetId];
+        if (block.timestamp < actionsSet.executionTime) revert TimelockNotFinished();
+
+        actionsSet.executed = true;
+        uint256 actionCount = actionsSet.targets.length;
+
+        bytes[] memory returnedData = new bytes[](actionCount);
+        for (uint256 i = 0; i < actionCount; ) {
+            returnedData[i] = _executeTransaction(
+                actionsSet.targets[i],
+                actionsSet.values[i],
+                actionsSet.signatures[i],
+                actionsSet.calldatas[i],
+                actionsSet.executionTime,
+                actionsSet.withDelegatecalls[i]
+            );
+            unchecked {
+                ++i;
+            }
+        }
+
+        emit ActionsSetExecuted(actionsSetId, msg.sender, returnedData);
+    }
+
+    /// @inheritdoc IExecutor
+    function cancel(uint256 actionsSetId) external override onlyGuardian {
+        if (getCurrentState(actionsSetId) != ActionsSetState.Queued) revert OnlyQueuedActions();
+
+        ActionsSet storage actionsSet = _actionsSets[actionsSetId];
+        actionsSet.canceled = true;
+
+        uint256 targetsLength = actionsSet.targets.length;
+        for (uint256 i = 0; i < targetsLength; ) {
+            _cancelTransaction(
+                actionsSet.targets[i],
+                actionsSet.values[i],
+                actionsSet.signatures[i],
+                actionsSet.calldatas[i],
+                actionsSet.executionTime,
+                actionsSet.withDelegatecalls[i]
+            );
+            unchecked {
+                ++i;
+            }
+        }
+
+        emit ActionsSetCanceled(actionsSetId);
+    }
+
+    /// @inheritdoc IExecutor
+    function updateGuardian(address guardian) external override onlyThis {
+        _updateGuardian(guardian);
+    }
+
+    /// @inheritdoc IExecutor
+    function updateDelay(uint256 delay) external override onlyThis {
+        _updateDelay(delay);
+    }
+
+    /// @inheritdoc IExecutor
+    function updateGracePeriod(uint256 gracePeriod) external override onlyThis {
+        if (gracePeriod < MINIMUM_GRACE_PERIOD) revert GracePeriodTooShort();
+        _updateGracePeriod(gracePeriod);
+    }
+
+    /// @inheritdoc IExecutor
+    function executeDelegateCall(address target, bytes calldata data)
+        external
+        payable
+        override
+        onlyThis
+        returns (bytes memory)
+    {
+        return target.functionDelegateCall(data);
+    }
+
+    /// @inheritdoc IExecutor
+    function receiveFunds() external payable override {}
+
+    /// @inheritdoc IExecutor
+    function getDelay() external view override returns (uint256) {
+        return _delay;
+    }
+
+    /// @inheritdoc IExecutor
+    function getGracePeriod() external view override returns (uint256) {
+        return _gracePeriod;
+    }
+
+    /// @inheritdoc IExecutor
+    function getGuardian() external view override returns (address) {
+        return _guardian;
+    }
+
+    /// @inheritdoc IExecutor
+    function getActionsSetCount() external view override returns (uint256) {
+        return _actionsSetCounter;
+    }
+
+    /// @inheritdoc IExecutor
+    function getActionsSetById(uint256 actionsSetId)
+        external
+        view
+        override
+        returns (ActionsSet memory)
+    {
+        return _actionsSets[actionsSetId];
+    }
+
+    /// @inheritdoc IExecutor
+    function getCurrentState(uint256 actionsSetId) public view override returns (ActionsSetState) {
+        if (_actionsSetCounter <= actionsSetId) revert InvalidActionsSetId();
+        ActionsSet storage actionsSet = _actionsSets[actionsSetId];
+        if (actionsSet.canceled) {
+            return ActionsSetState.Canceled;
+        } else if (actionsSet.executed) {
+            return ActionsSetState.Executed;
+        } else if (block.timestamp > actionsSet.executionTime + _gracePeriod) {
+            return ActionsSetState.Expired;
+        } else {
+            return ActionsSetState.Queued;
+        }
+    }
+
+    /// @inheritdoc IExecutor
+    function isActionQueued(bytes32 actionHash) public view override returns (bool) {
+        return _queuedActions[actionHash];
+    }
+
+    function _updateGuardian(address guardian) internal {
+        emit GuardianUpdate(_guardian, guardian);
+        _guardian = guardian;
+    }
+
+    function _updateDelay(uint256 delay) internal {
+        emit DelayUpdate(_delay, delay);
+        _delay = delay;
+    }
+
+    function _updateGracePeriod(uint256 gracePeriod) internal {
+        emit GracePeriodUpdate(_gracePeriod, gracePeriod);
+        _gracePeriod = gracePeriod;
     }
 
     function _executeTransaction(

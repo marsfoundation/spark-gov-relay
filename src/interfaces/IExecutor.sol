@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0
-pragma solidity ^0.8.10;
+pragma solidity >=0.8.0;
+
+import { IAccessControl } from 'openzeppelin-contracts/contracts/access/IAccessControl.sol';
 
 /**
- * @title IExecutorBase
+ * @title IExecutor
  * @author Aave
- * @notice Defines the basic interface for the ExecutorBase abstract contract
+ * @notice Defines the interface for the Executor
  */
-interface IExecutorBase {
+interface IExecutor is IAccessControl {
+
     error InvalidInitParams();
     error NotGuardian();
     error OnlyCallableByThis();
@@ -116,6 +119,23 @@ interface IExecutorBase {
     event GracePeriodUpdate(uint256 oldGracePeriod, uint256 newGracePeriod);
 
     /**
+     * @notice Queue an ActionsSet
+     * @dev If a signature is empty, calldata is used for the execution, calldata is appended to signature otherwise
+     * @param targets Array of targets to be called by the actions set
+     * @param values Array of values to pass in each call by the actions set
+     * @param signatures Array of function signatures to encode in each call by the actions (can be empty)
+     * @param calldatas Array of calldata to pass in each call by the actions set
+     * @param withDelegatecalls Array of whether to delegatecall for each call of the actions set
+     **/
+    function queue(
+        address[] memory targets,
+        uint256[] memory values,
+        string[] memory signatures,
+        bytes[] memory calldatas,
+        bool[] memory withDelegatecalls
+    ) external;
+
+    /**
      * @notice Execute the ActionsSet
      * @param actionsSetId The id of the ActionsSet to execute
      **/
@@ -208,4 +228,5 @@ interface IExecutorBase {
      * @return True if the underlying action of actionHash is queued, false otherwise
      **/
     function isActionQueued(bytes32 actionHash) external view returns (bool);
+
 }

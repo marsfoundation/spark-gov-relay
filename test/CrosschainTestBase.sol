@@ -6,9 +6,8 @@ import 'forge-std/Test.sol';
 import { Bridge }        from 'lib/xchain-helpers/src/testing/Bridge.sol';
 import { DomainHelpers } from 'lib/xchain-helpers/src/testing/Domain.sol';
 
-import { IAuthBridgeExecutor } from 'src/interfaces/IAuthBridgeExecutor.sol';
-import { IExecutorBase }       from 'src/interfaces/IExecutorBase.sol';
-import { AuthBridgeExecutor }  from 'src/executors/AuthBridgeExecutor.sol';
+import { IExecutor } from 'src/interfaces/IExecutor.sol';
+import { Executor }  from 'src/Executor.sol';
 
 import { IL1Executor } from './interfaces/IL1Executor.sol';
 import { IPayload }    from './interfaces/IPayload.sol';
@@ -48,7 +47,7 @@ abstract contract CrosschainPayload is IPayload {
         withDelegatecalls[0] = true;
 
         return abi.encodeWithSelector(
-            IAuthBridgeExecutor.queue.selector,
+            IExecutor.queue.selector,
             targets,
             values,
             signatures,
@@ -78,8 +77,8 @@ abstract contract CrosschainTestBase is Test {
 
     Bridge public bridge;
 
-    AuthBridgeExecutor public bridgeExecutor;
-    address            public bridgeReceiver;
+    Executor public bridgeExecutor;
+    address  public bridgeReceiver;
 
     function deployCrosschainPayload(IPayload targetPayload, address bridgeReceiver) public virtual returns (IPayload);
     function relayMessagesAcrossBridge() internal virtual;
@@ -132,7 +131,7 @@ abstract contract CrosschainTestBase is Test {
 
         skip(delay);
 
-        vm.expectRevert(IExecutorBase.OnlyQueuedActions.selector);
+        vm.expectRevert(IExecutor.OnlyQueuedActions.selector);
         bridgeExecutor.execute(0);
     }
 
@@ -143,7 +142,7 @@ abstract contract CrosschainTestBase is Test {
 
         skip(delay);
 
-        vm.expectRevert(IExecutorBase.TimelockNotFinished.selector);
+        vm.expectRevert(IExecutor.TimelockNotFinished.selector);
         bridgeExecutor.execute(0);
     }
 
@@ -197,7 +196,7 @@ abstract contract CrosschainTestBase is Test {
         vm.prank(defaultL2BridgeExecutorArgs.guardian);
         bridgeExecutor.cancel(0);
 
-        vm.expectRevert(IExecutorBase.OnlyQueuedActions.selector);
+        vm.expectRevert(IExecutor.OnlyQueuedActions.selector);
         vm.prank(defaultL2BridgeExecutorArgs.guardian);
         bridgeExecutor.cancel(0);
     }
@@ -209,7 +208,7 @@ abstract contract CrosschainTestBase is Test {
 
         bridgeExecutor.execute(0);
 
-        vm.expectRevert(IExecutorBase.OnlyQueuedActions.selector);
+        vm.expectRevert(IExecutor.OnlyQueuedActions.selector);
         vm.prank(defaultL2BridgeExecutorArgs.guardian);
         bridgeExecutor.cancel(0);
     }
@@ -219,7 +218,7 @@ abstract contract CrosschainTestBase is Test {
 
         skip(defaultL2BridgeExecutorArgs.delay + defaultL2BridgeExecutorArgs.gracePeriod + 1);
 
-        vm.expectRevert(IExecutorBase.OnlyQueuedActions.selector);
+        vm.expectRevert(IExecutor.OnlyQueuedActions.selector);
         vm.prank(defaultL2BridgeExecutorArgs.guardian);
         bridgeExecutor.cancel(0);
     }
@@ -232,7 +231,7 @@ abstract contract CrosschainTestBase is Test {
         vm.prank(defaultL2BridgeExecutorArgs.guardian);
         bridgeExecutor.cancel(0);
 
-        vm.expectRevert(IExecutorBase.OnlyQueuedActions.selector);
+        vm.expectRevert(IExecutor.OnlyQueuedActions.selector);
         bridgeExecutor.execute(0);
     }
 
