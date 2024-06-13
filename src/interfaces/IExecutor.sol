@@ -4,11 +4,15 @@ pragma solidity >=0.8.0;
 import { IAccessControl } from 'openzeppelin-contracts/contracts/access/IAccessControl.sol';
 
 /**
- * @title IExecutor
+ * @title  IExecutor
  * @author Aave
  * @notice Defines the interface for the Executor
  */
 interface IExecutor is IAccessControl {
+
+    /******************************************************************************************************************/
+    /*** Errors                                                                                                     ***/
+    /******************************************************************************************************************/
 
     error InvalidInitParams();
     error GracePeriodTooShort();
@@ -20,6 +24,10 @@ interface IExecutor is IAccessControl {
     error DuplicateAction();
     error InsufficientBalance();
 
+    /******************************************************************************************************************/
+    /*** Enums                                                                                                      ***/
+    /******************************************************************************************************************/
+
     /**
      * @notice This enum contains all possible actions set states
      */
@@ -29,6 +37,10 @@ interface IExecutor is IAccessControl {
         Canceled,
         Expired
     }
+
+    /******************************************************************************************************************/
+    /*** Events                                                                                                     ***/
+    /******************************************************************************************************************/
 
     /**
      * @notice This struct contains the data needed to execute a specified set of actions.
@@ -104,6 +116,10 @@ interface IExecutor is IAccessControl {
      **/
     event GracePeriodUpdate(uint256 oldGracePeriod, uint256 newGracePeriod);
 
+    /******************************************************************************************************************/
+    /*** State variables                                                                                            ***/
+    /******************************************************************************************************************/
+
     /**
      * @notice The role that allows submission of a queued action.
      **/
@@ -118,6 +134,36 @@ interface IExecutor is IAccessControl {
      * @notice Returns the minimum grace period that can be set, 10 minutes.
      */
     function MINIMUM_GRACE_PERIOD() external view returns (uint256);
+
+     /**
+     * @notice Returns the total number of actions sets of the executor.
+     * @return The number of actions sets.
+     **/
+    function actionsSetCount() external view returns (uint256);
+
+    /**
+     * @notice Returns the delay (between queuing and execution)
+     * @return The value of the delay (in seconds)
+     **/
+    function delay() external view returns (uint256);
+
+    /**
+     * @notice Time after the execution time during which the actions set can be executed.
+     * @return The value of the grace period (in seconds)
+     **/
+    function gracePeriod() external view returns (uint256);
+
+    /**
+     * @notice Returns whether an actions set (by actionHash) is queued.
+     * @dev    actionHash = keccak256(abi.encode(target, value, signature, data, executionTime, withDelegatecall)).
+     * @param  actionHash hash of the action to be checked.
+     * @return True if the underlying action of actionHash is queued, false otherwise.
+     **/
+    function isActionQueued(bytes32 actionHash) external view returns (bool);
+
+    /******************************************************************************************************************/
+    /*** ActionSet functions                                                                                        ***/
+    /******************************************************************************************************************/
 
     /**
      * @notice Queue an ActionsSet.
@@ -148,6 +194,10 @@ interface IExecutor is IAccessControl {
      **/
     function cancel(uint256 actionsSetId) external;
 
+    /******************************************************************************************************************/
+    /*** Admin functions                                                                                            ***/
+    /******************************************************************************************************************/
+
     /**
      * @notice Update the delay, time between queueing and execution of ActionsSet.
      * @dev    It does not affect to actions set that are already queued.
@@ -160,6 +210,10 @@ interface IExecutor is IAccessControl {
      * @param  gracePeriod The value of the grace period (in seconds).
      **/
     function updateGracePeriod(uint256 gracePeriod) external;
+
+    /******************************************************************************************************************/
+    /*** Misc functions                                                                                             ***/
+    /******************************************************************************************************************/
 
     /**
      * @notice Allows to delegatecall a given target with an specific amount of value.
@@ -178,44 +232,23 @@ interface IExecutor is IAccessControl {
      */
     function receiveFunds() external payable;
 
-    /**
-     * @notice Returns the delay (between queuing and execution)
-     * @return The value of the delay (in seconds)
-     **/
-    function delay() external view returns (uint256);
+    /******************************************************************************************************************/
+    /*** View functions                                                                                             ***/
+    /******************************************************************************************************************/
 
-    /**
-     * @notice Time after the execution time during which the actions set can be executed.
-     * @return The value of the grace period (in seconds)
-     **/
-    function gracePeriod() external view returns (uint256);
-
-    /**
-     * @notice Returns the total number of actions sets of the executor.
-     * @return The number of actions sets.
-     **/
-    function actionsSetCount() external view returns (uint256);
 
     /**
      * @notice Returns the data of an actions set.
      * @param  actionsSetId The id of the ActionsSet.
      * @return The data of the ActionsSet.
      **/
-    function getActionsSetById(uint256 actionsSetId) external view returns (ActionsSet memory);
+     function getActionsSetById(uint256 actionsSetId) external view returns (ActionsSet memory);
 
-    /**
-     * @notice Returns the current state of an actions set.
-     * @param  actionsSetId The id of the ActionsSet.
-     * @return The current state of theI ActionsSet.
-     **/
-    function getCurrentState(uint256 actionsSetId) external view returns (ActionsSetState);
-
-    /**
-     * @notice Returns whether an actions set (by actionHash) is queued.
-     * @dev    actionHash = keccak256(abi.encode(target, value, signature, data, executionTime, withDelegatecall)).
-     * @param  actionHash hash of the action to be checked.
-     * @return True if the underlying action of actionHash is queued, false otherwise.
-     **/
-    function isActionQueued(bytes32 actionHash) external view returns (bool);
+     /**
+      * @notice Returns the current state of an actions set.
+      * @param  actionsSetId The id of the ActionsSet.
+      * @return The current state of theI ActionsSet.
+      **/
+     function getCurrentState(uint256 actionsSetId) external view returns (ActionsSetState);
 
 }

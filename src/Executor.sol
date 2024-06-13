@@ -7,13 +7,17 @@ import { Address }       from "openzeppelin-contracts/contracts/utils/Address.so
 import { IExecutor } from './interfaces/IExecutor.sol';
 
 /**
- * @title Executor
+ * @title  Executor
  * @author Aave
  * @notice Executor which queues up message calls and executes them after an optional delay
  */
 contract Executor is IExecutor, AccessControl {
 
     using Address for address;
+
+    /******************************************************************************************************************/
+    /*** State variables and constructor                                                                            ***/
+    /******************************************************************************************************************/
 
     bytes32 public constant SUBMISSION_ROLE = keccak256('SUBMISSION_ROLE');
     bytes32 public constant GUARDIAN_ROLE   = keccak256('GUARDIAN_ROLE');
@@ -31,8 +35,8 @@ contract Executor is IExecutor, AccessControl {
 
     /**
     *  @dev   Constructor
-    *  @param delay_       The delay before which an actions set can be executed
-    *  @param gracePeriod_ The time period after a delay during which an actions set can be executed
+    *  @param delay_       The delay before which an actions set can be executed.
+    *  @param gracePeriod_ The time period after a delay during which an actions set can be executed.
     */
     constructor(
         uint256 delay_,
@@ -52,6 +56,10 @@ contract Executor is IExecutor, AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE, address(this));
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
+
+    /******************************************************************************************************************/
+    /*** ActionSet functions                                                                                        ***/
+    /******************************************************************************************************************/
 
     /// @inheritdoc IExecutor
     function queue(
@@ -74,9 +82,7 @@ contract Executor is IExecutor, AccessControl {
         uint256 actionsSetId  = actionsSetCount;
         uint256 executionTime = block.timestamp + delay;
 
-        unchecked {
-            ++actionsSetCount;
-        }
+        unchecked { ++actionsSetCount; }
 
         for (uint256 i = 0; i < targetsLength; ++i) {
             bytes32 actionHash = keccak256(
@@ -163,6 +169,10 @@ contract Executor is IExecutor, AccessControl {
         emit ActionsSetCanceled(actionsSetId);
     }
 
+    /******************************************************************************************************************/
+    /*** Admin functions                                                                                            ***/
+    /******************************************************************************************************************/
+
     /// @inheritdoc IExecutor
     function updateDelay(uint256 newDelay) external override onlyRole(DEFAULT_ADMIN_ROLE) {
         _updateDelay(newDelay);
@@ -175,6 +185,10 @@ contract Executor is IExecutor, AccessControl {
         if (newGracePeriod < MINIMUM_GRACE_PERIOD) revert GracePeriodTooShort();
         _updateGracePeriod(newGracePeriod);
     }
+
+    /******************************************************************************************************************/
+    /*** External misc functions                                                                                    ***/
+    /******************************************************************************************************************/
 
     /// @inheritdoc IExecutor
     function executeDelegateCall(address target, bytes calldata data)
@@ -189,6 +203,10 @@ contract Executor is IExecutor, AccessControl {
 
     /// @inheritdoc IExecutor
     function receiveFunds() external payable override {}
+
+    /******************************************************************************************************************/
+    /*** External view functions                                                                                    ***/
+    /******************************************************************************************************************/
 
     /// @inheritdoc IExecutor
     function getActionsSetById(uint256 actionsSetId)
@@ -212,15 +230,9 @@ contract Executor is IExecutor, AccessControl {
         else return ActionsSetState.Queued;
     }
 
-    function _updateDelay(uint256 newDelay) internal {
-        emit DelayUpdate(delay, newDelay);
-        delay = newDelay;
-    }
-
-    function _updateGracePeriod(uint256 newGracePeriod) internal {
-        emit GracePeriodUpdate(gracePeriod, newGracePeriod);
-        gracePeriod = newGracePeriod;
-    }
+    /******************************************************************************************************************/
+    /*** Internal ActionSet helper functions                                                                        ***/
+    /******************************************************************************************************************/
 
     function _executeTransaction(
         address target,
@@ -255,6 +267,20 @@ contract Executor is IExecutor, AccessControl {
             abi.encode(target, value, signature, data, executionTime, withDelegatecall)
         );
         isActionQueued[actionHash] = false;
+    }
+
+    /******************************************************************************************************************/
+    /*** Internal admin helper functions                                                                            ***/
+    /******************************************************************************************************************/
+
+    function _updateDelay(uint256 newDelay) internal {
+        emit DelayUpdate(delay, newDelay);
+        delay = newDelay;
+    }
+
+    function _updateGracePeriod(uint256 newGracePeriod) internal {
+        emit GracePeriodUpdate(gracePeriod, newGracePeriod);
+        gracePeriod = newGracePeriod;
     }
 
 }
