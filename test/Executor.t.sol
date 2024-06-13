@@ -65,8 +65,8 @@ contract ExecutorTestBase is Test {
 
     function setUp() public {
         executor = new Executor({
-            delay:        DELAY,
-            gracePeriod:  GRACE_PERIOD
+            delay:       DELAY,
+            gracePeriod: GRACE_PERIOD
         });
         executor.grantRole(executor.SUBMISSION_ROLE(),     bridge);
         executor.grantRole(executor.GUARDIAN_ROLE(),       guardian);
@@ -154,13 +154,13 @@ contract ExecutorConstructorTests is ExecutorTestBase {
     function test_constructor_invalidInitParams_boundary() public {
         vm.expectRevert(abi.encodeWithSignature("InvalidInitParams()"));
         executor = new Executor({
-            delay:        DELAY,
-            gracePeriod:  10 minutes - 1
+            delay:       DELAY,
+            gracePeriod: 10 minutes - 1
         });
 
         executor = new Executor({
-            delay:        DELAY,
-            gracePeriod:  10 minutes
+            delay:       DELAY,
+            gracePeriod: 10 minutes
         });
     }
 
@@ -170,8 +170,8 @@ contract ExecutorConstructorTests is ExecutorTestBase {
         vm.expectEmit();
         emit GracePeriodUpdate(0, GRACE_PERIOD);
         executor = new Executor({
-            delay:        DELAY,
-            gracePeriod:  GRACE_PERIOD
+            delay:       DELAY,
+            gracePeriod: GRACE_PERIOD
         });
 
         assertEq(executor.getDelay(),       DELAY);
