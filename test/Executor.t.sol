@@ -51,7 +51,6 @@ contract ExecutorTestBase is Test {
         bytes[] returnedData
     );
     event ActionsSetCanceled(uint256 indexed id);
-    event GuardianUpdate(address oldGuardian, address newGuardian);
     event DelayUpdate(uint256 oldDelay, uint256 newDelay);
     event GracePeriodUpdate(uint256 oldGracePeriod, uint256 newGracePeriod);
     event TestEvent();
@@ -67,10 +66,10 @@ contract ExecutorTestBase is Test {
     function setUp() public {
         executor = new Executor({
             delay:        DELAY,
-            gracePeriod:  GRACE_PERIOD,
-            guardian:     guardian
+            gracePeriod:  GRACE_PERIOD
         });
-        executor.grantRole(executor.DEFAULT_ADMIN_ROLE(),  bridge);
+        executor.grantRole(executor.SUBMISSION_ROLE(),     bridge);
+        executor.grantRole(executor.GUARDIAN_ROLE(),       guardian);
         executor.revokeRole(executor.DEFAULT_ADMIN_ROLE(), address(this));
     }
 
@@ -156,14 +155,12 @@ contract ExecutorConstructorTests is ExecutorTestBase {
         vm.expectRevert(abi.encodeWithSignature("InvalidInitParams()"));
         executor = new Executor({
             delay:        DELAY,
-            gracePeriod:  10 minutes - 1,
-            guardian:     guardian
+            gracePeriod:  10 minutes - 1
         });
 
         executor = new Executor({
             delay:        DELAY,
-            gracePeriod:  10 minutes,
-            guardian:     guardian
+            gracePeriod:  10 minutes
         });
     }
 
@@ -172,27 +169,24 @@ contract ExecutorConstructorTests is ExecutorTestBase {
         emit DelayUpdate(0, DELAY);
         vm.expectEmit();
         emit GracePeriodUpdate(0, GRACE_PERIOD);
-        vm.expectEmit();
-        emit GuardianUpdate(address(0), guardian);
         executor = new Executor({
             delay:        DELAY,
-            gracePeriod:  GRACE_PERIOD,
-            guardian:     guardian
+            gracePeriod:  GRACE_PERIOD
         });
 
         assertEq(executor.getDelay(),       DELAY);
         assertEq(executor.getGracePeriod(), GRACE_PERIOD);
-        assertEq(executor.getGuardian(),    guardian);
 
-        assertEq(executor.hasRole(executor.DEFAULT_ADMIN_ROLE(), address(this)), true);
+        assertEq(executor.hasRole(executor.DEFAULT_ADMIN_ROLE(), address(this)),     true);
+        assertEq(executor.hasRole(executor.DEFAULT_ADMIN_ROLE(), address(executor)), true);
     }
 
 }
 
 contract ExecutorQueueTests is ExecutorTestBase {
 
-    function test_queue_onlyDefaultAdmin() public {
-        vm.expectRevert(abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", address(this), executor.DEFAULT_ADMIN_ROLE()));
+    function test_queue_onlySubmissionRole() public {
+        vm.expectRevert(abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", address(this), executor.SUBMISSION_ROLE()));
         executor.queue(new address[](0), new uint256[](0), new string[](0), new bytes[](0), new bool[](0));
     }
 
@@ -537,7 +531,7 @@ contract ExecutorCancelTests is ExecutorTestBase {
         _queueAction();
         skip(DELAY);
 
-        vm.expectRevert(abi.encodeWithSignature("NotGuardian()"));
+        vm.expectRevert(abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", address(this), executor.GUARDIAN_ROLE()));
         executor.cancel(0);
     }
 
@@ -613,26 +607,8 @@ contract ExecutorCancelTests is ExecutorTestBase {
 
 contract ExecutorUpdateTests is ExecutorTestBase {
 
-    function test_updateGuardian_notSelf() public {
-        vm.expectRevert(abi.encodeWithSignature("OnlyCallableByThis()"));
-        executor.updateGuardian(guardian);
-    }
-
-    function test_updateGuardian() public {
-        address newGuardian = makeAddr("newGuardian");
-
-        assertEq(executor.getGuardian(), guardian);
-
-        vm.expectEmit(address(executor));
-        emit GuardianUpdate(guardian, newGuardian);
-        vm.prank(address(executor));
-        executor.updateGuardian(newGuardian);
-
-        assertEq(executor.getGuardian(), newGuardian);
-    }
-
     function test_updateDelay_notSelf() public {
-        vm.expectRevert(abi.encodeWithSignature("OnlyCallableByThis()"));
+        vm.expectRevert(abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", address(this), executor.DEFAULT_ADMIN_ROLE()));
         executor.updateDelay(2 days);
     }
 
@@ -648,7 +624,7 @@ contract ExecutorUpdateTests is ExecutorTestBase {
     }
 
     function test_updateGracePeriod_notSelf() public {
-        vm.expectRevert(abi.encodeWithSignature("OnlyCallableByThis()"));
+        vm.expectRevert(abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", address(this), executor.DEFAULT_ADMIN_ROLE()));
         executor.updateGracePeriod(60 days);
     }
 
@@ -677,7 +653,7 @@ contract ExecutorUpdateTests is ExecutorTestBase {
 contract ExecutorMiscTests is ExecutorTestBase {
 
     function test_executeDelegateCall_notSelf() public {
-        vm.expectRevert(abi.encodeWithSignature("OnlyCallableByThis()"));
+        vm.expectRevert(abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", address(this), executor.DEFAULT_ADMIN_ROLE()));
         executor.executeDelegateCall(address(0), "");
     }
 

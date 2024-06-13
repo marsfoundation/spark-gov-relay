@@ -42,8 +42,7 @@ contract GnosisCrosschainTest is CrosschainTestBase {
         bridge.destination.selectFork();
         bridgeExecutor = new Executor(
             defaultL2BridgeExecutorArgs.delay,
-            defaultL2BridgeExecutorArgs.gracePeriod,
-            defaultL2BridgeExecutorArgs.guardian
+            defaultL2BridgeExecutorArgs.gracePeriod
         );
         bridgeReceiver = address(new AMBReceiver(
             AMBBridgeTesting.getGnosisMessengerFromChainAlias(bridge.destination.chain.chainAlias),
@@ -51,7 +50,9 @@ contract GnosisCrosschainTest is CrosschainTestBase {
             defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
             address(bridgeExecutor)
         ));
-        bridgeExecutor.grantRole(bridgeExecutor.DEFAULT_ADMIN_ROLE(), bridgeReceiver);
+        bridgeExecutor.grantRole(bridgeExecutor.SUBMISSION_ROLE(),     bridgeReceiver);
+        bridgeExecutor.grantRole(bridgeExecutor.GUARDIAN_ROLE(),       defaultL2BridgeExecutorArgs.guardian);
+        bridgeExecutor.revokeRole(bridgeExecutor.DEFAULT_ADMIN_ROLE(), address(this));
 
         bridge.source.selectFork();
     }

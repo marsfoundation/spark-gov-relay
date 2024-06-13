@@ -11,13 +11,7 @@ import { IAccessControl } from 'openzeppelin-contracts/contracts/access/IAccessC
 interface IExecutor is IAccessControl {
 
     error InvalidInitParams();
-    error NotGuardian();
-    error OnlyCallableByThis();
-    error MinimumDelayTooLong();
-    error MaximumDelayTooShort();
     error GracePeriodTooShort();
-    error DelayShorterThanMin();
-    error DelayLongerThanMax();
     error OnlyQueuedActions();
     error TimelockNotFinished();
     error InvalidActionsSetId();
@@ -25,7 +19,6 @@ interface IExecutor is IAccessControl {
     error InconsistentParamsLength();
     error DuplicateAction();
     error InsufficientBalance();
-    error FailedActionExecution();
 
     /**
      * @notice This enum contains all possible actions set states
@@ -98,13 +91,6 @@ interface IExecutor is IAccessControl {
     event ActionsSetCanceled(uint256 indexed id);
 
     /**
-     * @dev Emitted when a new guardian is set
-     * @param oldGuardian The address of the old guardian
-     * @param newGuardian The address of the new guardian
-     **/
-    event GuardianUpdate(address oldGuardian, address newGuardian);
-
-    /**
      * @dev Emitted when the delay (between queueing and execution) is updated
      * @param oldDelay The value of the old delay
      * @param newDelay The value of the new delay
@@ -117,6 +103,16 @@ interface IExecutor is IAccessControl {
      * @param newGracePeriod The value of the new grace period
      **/
     event GracePeriodUpdate(uint256 oldGracePeriod, uint256 newGracePeriod);
+
+    /**
+     * @notice The role that allows submission of a queued action.
+     **/
+    function SUBMISSION_ROLE() external view returns (bytes32);
+
+    /**
+     * @notice The role that allows a guardian to cancel a pending action.
+     **/
+    function GUARDIAN_ROLE() external view returns (bytes32);
 
     /**
      * @notice Queue an ActionsSet
@@ -146,12 +142,6 @@ interface IExecutor is IAccessControl {
      * @param actionsSetId The id of the ActionsSet to cancel
      **/
     function cancel(uint256 actionsSetId) external;
-
-    /**
-     * @notice Update guardian
-     * @param guardian The address of the new guardian
-     **/
-    function updateGuardian(address guardian) external;
 
     /**
      * @notice Update the delay, time between queueing and execution of ActionsSet
@@ -194,12 +184,6 @@ interface IExecutor is IAccessControl {
      * @return The value of the grace period (in seconds)
      **/
     function getGracePeriod() external view returns (uint256);
-
-    /**
-     * @notice Returns the address of the guardian
-     * @return The address of the guardian
-     **/
-    function getGuardian() external view returns (address);
 
     /**
      * @notice Returns the total number of actions sets of the executor
