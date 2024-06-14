@@ -52,9 +52,8 @@ contract Executor is IExecutor, AccessControl {
         _setRoleAdmin(SUBMISSION_ROLE, DEFAULT_ADMIN_ROLE);
         _setRoleAdmin(GUARDIAN_ROLE,   DEFAULT_ADMIN_ROLE);
 
-        // Necessary for self-referential calls to change configuration
-        _grantRole(DEFAULT_ADMIN_ROLE, address(this));
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(DEFAULT_ADMIN_ROLE, address(this));  // Necessary for self-referential calls to change configuration
     }
 
     /******************************************************************************************************************/
@@ -151,7 +150,7 @@ contract Executor is IExecutor, AccessControl {
     function cancel(uint256 actionsSetId) external override onlyRole(GUARDIAN_ROLE) {
         if (getCurrentState(actionsSetId) != ActionsSetState.Queued) revert OnlyQueuedActions();
 
-        ActionsSet storage actionsSet =_actionsSets[actionsSetId];
+        ActionsSet storage actionsSet = _actionsSets[actionsSetId];
         actionsSet.canceled = true;
 
         uint256 targetsLength = actionsSet.targets.length;
