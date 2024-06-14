@@ -100,7 +100,7 @@ contract Executor is IExecutor, AccessControl {
             isActionQueued[actionHash] = true;
         }
 
-        ActionsSet storage actionsSet =_actionsSets[actionsSetId];
+        ActionsSet storage actionsSet = _actionsSets[actionsSetId];
 
         actionsSet.targets           = targets;
         actionsSet.values            = values;
@@ -124,7 +124,7 @@ contract Executor is IExecutor, AccessControl {
     function execute(uint256 actionsSetId) external payable override {
         if (getCurrentState(actionsSetId) != ActionsSetState.Queued) revert OnlyQueuedActions();
 
-        ActionsSet storage actionsSet =_actionsSets[actionsSetId];
+        ActionsSet storage actionsSet = _actionsSets[actionsSetId];
 
         if (block.timestamp < actionsSet.executionTime) revert TimelockNotFinished();
 
