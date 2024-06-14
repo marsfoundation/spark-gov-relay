@@ -1,20 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0
-pragma solidity ^0.8.10;
+pragma solidity >=0.8.0;
+
+import { IAccessControl } from 'openzeppelin-contracts/contracts/access/IAccessControl.sol';
 
 /**
- * @title IExecutorBase
+ * @title IExecutor
  * @author Aave
- * @notice Defines the basic interface for the ExecutorBase abstract contract
+ * @notice Defines the interface for the Executor
  */
-interface IExecutorBase {
+interface IExecutor is IAccessControl {
+
     error InvalidInitParams();
-    error NotGuardian();
-    error OnlyCallableByThis();
-    error MinimumDelayTooLong();
-    error MaximumDelayTooShort();
     error GracePeriodTooShort();
-    error DelayShorterThanMin();
-    error DelayLongerThanMax();
     error OnlyQueuedActions();
     error TimelockNotFinished();
     error InvalidActionsSetId();
@@ -22,7 +19,6 @@ interface IExecutorBase {
     error InconsistentParamsLength();
     error DuplicateAction();
     error InsufficientBalance();
-    error FailedActionExecution();
 
     /**
      * @notice This enum contains all possible actions set states
@@ -95,13 +91,6 @@ interface IExecutorBase {
     event ActionsSetCanceled(uint256 indexed id);
 
     /**
-     * @dev Emitted when a new guardian is set
-     * @param oldGuardian The address of the old guardian
-     * @param newGuardian The address of the new guardian
-     **/
-    event GuardianUpdate(address oldGuardian, address newGuardian);
-
-    /**
      * @dev Emitted when the delay (between queueing and execution) is updated
      * @param oldDelay The value of the old delay
      * @param newDelay The value of the new delay
@@ -116,6 +105,33 @@ interface IExecutorBase {
     event GracePeriodUpdate(uint256 oldGracePeriod, uint256 newGracePeriod);
 
     /**
+     * @notice The role that allows submission of a queued action.
+     **/
+    function SUBMISSION_ROLE() external view returns (bytes32);
+
+    /**
+     * @notice The role that allows a guardian to cancel a pending action.
+     **/
+    function GUARDIAN_ROLE() external view returns (bytes32);
+
+    /**
+     * @notice Queue an ActionsSet
+     * @dev If a signature is empty, calldata is used for the execution, calldata is appended to signature otherwise
+     * @param targets Array of targets to be called by the actions set
+     * @param values Array of values to pass in each call by the actions set
+     * @param signatures Array of function signatures to encode in each call by the actions (can be empty)
+     * @param calldatas Array of calldata to pass in each call by the actions set
+     * @param withDelegatecalls Array of whether to delegatecall for each call of the actions set
+     **/
+    function queue(
+        address[] memory targets,
+        uint256[] memory values,
+        string[] memory signatures,
+        bytes[] memory calldatas,
+        bool[] memory withDelegatecalls
+    ) external;
+
+    /**
      * @notice Execute the ActionsSet
      * @param actionsSetId The id of the ActionsSet to execute
      **/
@@ -126,12 +142,6 @@ interface IExecutorBase {
      * @param actionsSetId The id of the ActionsSet to cancel
      **/
     function cancel(uint256 actionsSetId) external;
-
-    /**
-     * @notice Update guardian
-     * @param guardian The address of the new guardian
-     **/
-    function updateGuardian(address guardian) external;
 
     /**
      * @notice Update the delay, time between queueing and execution of ActionsSet
@@ -176,12 +186,6 @@ interface IExecutorBase {
     function getGracePeriod() external view returns (uint256);
 
     /**
-     * @notice Returns the address of the guardian
-     * @return The address of the guardian
-     **/
-    function getGuardian() external view returns (address);
-
-    /**
      * @notice Returns the total number of actions sets of the executor
      * @return The number of actions sets
      **/
@@ -208,4 +212,5 @@ interface IExecutorBase {
      * @return True if the underlying action of actionHash is queued, false otherwise
      **/
     function isActionQueued(bytes32 actionHash) external view returns (bool);
+
 }

@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 
-import { AuthBridgeExecutor } from 'src/executors/AuthBridgeExecutor.sol';
-import { IExecutorBase }      from 'src/interfaces/IExecutorBase.sol';
+import { IExecutor } from 'src/interfaces/IExecutor.sol';
+import { Executor }  from 'src/Executor.sol';
 
 contract DefaultPayload {
     event TestEvent();
@@ -26,7 +26,7 @@ contract RevertingPayload {
     }
 }
 
-contract AuthBridgeExecutorTestBase is Test {
+contract ExecutorTestBase is Test {
 
     struct Action {
         address[] targets;
@@ -51,7 +51,6 @@ contract AuthBridgeExecutorTestBase is Test {
         bytes[] returnedData
     );
     event ActionsSetCanceled(uint256 indexed id);
-    event GuardianUpdate(address oldGuardian, address newGuardian);
     event DelayUpdate(uint256 oldDelay, uint256 newDelay);
     event GracePeriodUpdate(uint256 oldGracePeriod, uint256 newGracePeriod);
     event TestEvent();
@@ -62,15 +61,15 @@ contract AuthBridgeExecutorTestBase is Test {
     address bridge   = makeAddr("bridge");
     address guardian = makeAddr("guardian");
 
-    AuthBridgeExecutor executor;
+    Executor executor;
 
     function setUp() public {
-        executor = new AuthBridgeExecutor({
-            delay:        DELAY,
-            gracePeriod:  GRACE_PERIOD,
-            guardian:     guardian
+        executor = new Executor({
+            delay:       DELAY,
+            gracePeriod: GRACE_PERIOD
         });
-        executor.grantRole(executor.DEFAULT_ADMIN_ROLE(),  bridge);
+        executor.grantRole(executor.SUBMISSION_ROLE(),     bridge);
+        executor.grantRole(executor.GUARDIAN_ROLE(),       guardian);
         executor.revokeRole(executor.DEFAULT_ADMIN_ROLE(), address(this));
     }
 
@@ -137,7 +136,7 @@ contract AuthBridgeExecutorTestBase is Test {
     }
 
     function _assertActionSet(uint256 id, bool executed, bool canceled, uint256 executionTime, Action memory action) internal view {
-        IExecutorBase.ActionsSet memory actionsSet = executor.getActionsSetById(id);
+        IExecutor.ActionsSet memory actionsSet = executor.getActionsSetById(id);
         assertEq(actionsSet.targets,           action.targets);
         assertEq(actionsSet.values,            action.values);
         assertEq(actionsSet.signatures,        action.signatures);
@@ -150,20 +149,18 @@ contract AuthBridgeExecutorTestBase is Test {
 
 }
 
-contract AuthBridgeExecutorConstructorTests is AuthBridgeExecutorTestBase {
+contract ExecutorConstructorTests is ExecutorTestBase {
 
     function test_constructor_invalidInitParams_boundary() public {
         vm.expectRevert(abi.encodeWithSignature("InvalidInitParams()"));
-        executor = new AuthBridgeExecutor({
-            delay:        DELAY,
-            gracePeriod:  10 minutes - 1,
-            guardian:     guardian
+        executor = new Executor({
+            delay:       DELAY,
+            gracePeriod: 10 minutes - 1
         });
 
-        executor = new AuthBridgeExecutor({
-            delay:        DELAY,
-            gracePeriod:  10 minutes,
-            guardian:     guardian
+        executor = new Executor({
+            delay:       DELAY,
+            gracePeriod: 10 minutes
         });
     }
 
@@ -172,27 +169,24 @@ contract AuthBridgeExecutorConstructorTests is AuthBridgeExecutorTestBase {
         emit DelayUpdate(0, DELAY);
         vm.expectEmit();
         emit GracePeriodUpdate(0, GRACE_PERIOD);
-        vm.expectEmit();
-        emit GuardianUpdate(address(0), guardian);
-        executor = new AuthBridgeExecutor({
-            delay:        DELAY,
-            gracePeriod:  GRACE_PERIOD,
-            guardian:     guardian
+        executor = new Executor({
+            delay:       DELAY,
+            gracePeriod: GRACE_PERIOD
         });
 
         assertEq(executor.getDelay(),       DELAY);
         assertEq(executor.getGracePeriod(), GRACE_PERIOD);
-        assertEq(executor.getGuardian(),    guardian);
 
-        assertEq(executor.hasRole(executor.DEFAULT_ADMIN_ROLE(), address(this)), true);
+        assertEq(executor.hasRole(executor.DEFAULT_ADMIN_ROLE(), address(this)),     true);
+        assertEq(executor.hasRole(executor.DEFAULT_ADMIN_ROLE(), address(executor)), true);
     }
 
 }
 
-contract AuthBridgeExecutorQueueTests is AuthBridgeExecutorTestBase {
+contract ExecutorQueueTests is ExecutorTestBase {
 
-    function test_queue_onlyDefaultAdmin() public {
-        vm.expectRevert(abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", address(this), executor.DEFAULT_ADMIN_ROLE()));
+    function test_queue_onlySubmissionRole() public {
+        vm.expectRevert(abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", address(this), executor.SUBMISSION_ROLE()));
         executor.queue(new address[](0), new uint256[](0), new string[](0), new bytes[](0), new bool[](0));
     }
 
@@ -292,7 +286,7 @@ contract AuthBridgeExecutorQueueTests is AuthBridgeExecutorTestBase {
 
 }
 
-contract AuthBridgeExecutorExecuteTests is AuthBridgeExecutorTestBase {
+contract ExecutorExecuteTests is ExecutorTestBase {
 
     function test_execute_actionsSetIdTooHigh_boundary() public {
         assertEq(executor.getActionsSetCount(), 0);
@@ -439,7 +433,7 @@ contract AuthBridgeExecutorExecuteTests is AuthBridgeExecutorTestBase {
 
         assertEq(executor.isActionQueued(actionHash),    true);
         assertEq(executor.getActionsSetById(0).executed, false);
-        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Queued));
+        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutor.ActionsSetState.Queued));
 
         bytes[] memory returnedData = new bytes[](1);
         returnedData[0] = "";
@@ -451,7 +445,7 @@ contract AuthBridgeExecutorExecuteTests is AuthBridgeExecutorTestBase {
 
         assertEq(executor.isActionQueued(actionHash),    false);
         assertEq(executor.getActionsSetById(0).executed, true);
-        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Executed));
+        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutor.ActionsSetState.Executed));
     }
 
     function test_execute_call() public {
@@ -463,7 +457,7 @@ contract AuthBridgeExecutorExecuteTests is AuthBridgeExecutorTestBase {
 
         assertEq(executor.isActionQueued(actionHash),    true);
         assertEq(executor.getActionsSetById(0).executed, false);
-        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Queued));
+        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutor.ActionsSetState.Queued));
 
         bytes[] memory returnedData = new bytes[](1);
         returnedData[0] = "";
@@ -475,7 +469,7 @@ contract AuthBridgeExecutorExecuteTests is AuthBridgeExecutorTestBase {
 
         assertEq(executor.isActionQueued(actionHash),    false);
         assertEq(executor.getActionsSetById(0).executed, true);
-        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Executed));
+        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutor.ActionsSetState.Executed));
     }
 
     function test_execute_delegateCallWithCalldata() public {
@@ -488,7 +482,7 @@ contract AuthBridgeExecutorExecuteTests is AuthBridgeExecutorTestBase {
 
         assertEq(executor.isActionQueued(actionHash),    true);
         assertEq(executor.getActionsSetById(0).executed, false);
-        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Queued));
+        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutor.ActionsSetState.Queued));
 
         bytes[] memory returnedData = new bytes[](1);
         returnedData[0] = "";
@@ -500,7 +494,7 @@ contract AuthBridgeExecutorExecuteTests is AuthBridgeExecutorTestBase {
 
         assertEq(executor.isActionQueued(actionHash),    false);
         assertEq(executor.getActionsSetById(0).executed, true);
-        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Executed));
+        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutor.ActionsSetState.Executed));
     }
 
     function test_execute_callWithCalldata() public {
@@ -514,7 +508,7 @@ contract AuthBridgeExecutorExecuteTests is AuthBridgeExecutorTestBase {
 
         assertEq(executor.isActionQueued(actionHash),    true);
         assertEq(executor.getActionsSetById(0).executed, false);
-        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Queued));
+        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutor.ActionsSetState.Queued));
 
         bytes[] memory returnedData = new bytes[](1);
         returnedData[0] = "";
@@ -526,18 +520,18 @@ contract AuthBridgeExecutorExecuteTests is AuthBridgeExecutorTestBase {
 
         assertEq(executor.isActionQueued(actionHash),    false);
         assertEq(executor.getActionsSetById(0).executed, true);
-        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Executed));
+        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutor.ActionsSetState.Executed));
     }
 
 }
 
-contract AuthBridgeExecutorCancelTests is AuthBridgeExecutorTestBase {
+contract ExecutorCancelTests is ExecutorTestBase {
 
     function test_cancel_notGuardian() public {
         _queueAction();
         skip(DELAY);
 
-        vm.expectRevert(abi.encodeWithSignature("NotGuardian()"));
+        vm.expectRevert(abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", address(this), executor.GUARDIAN_ROLE()));
         executor.cancel(0);
     }
 
@@ -597,7 +591,7 @@ contract AuthBridgeExecutorCancelTests is AuthBridgeExecutorTestBase {
 
         assertEq(executor.isActionQueued(actionHash),    true);
         assertEq(executor.getActionsSetById(0).canceled, false);
-        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Queued));
+        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutor.ActionsSetState.Queued));
 
         vm.expectEmit(address(executor));
         emit ActionsSetCanceled(0);
@@ -606,33 +600,15 @@ contract AuthBridgeExecutorCancelTests is AuthBridgeExecutorTestBase {
 
         assertEq(executor.isActionQueued(actionHash),    false);
         assertEq(executor.getActionsSetById(0).canceled, true);
-        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutorBase.ActionsSetState.Canceled));
+        assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutor.ActionsSetState.Canceled));
     }
 
 }
 
-contract AuthBridgeExecutorUpdateTests is AuthBridgeExecutorTestBase {
-
-    function test_updateGuardian_notSelf() public {
-        vm.expectRevert(abi.encodeWithSignature("OnlyCallableByThis()"));
-        executor.updateGuardian(guardian);
-    }
-
-    function test_updateGuardian() public {
-        address newGuardian = makeAddr("newGuardian");
-
-        assertEq(executor.getGuardian(), guardian);
-
-        vm.expectEmit(address(executor));
-        emit GuardianUpdate(guardian, newGuardian);
-        vm.prank(address(executor));
-        executor.updateGuardian(newGuardian);
-
-        assertEq(executor.getGuardian(), newGuardian);
-    }
+contract ExecutorUpdateTests is ExecutorTestBase {
 
     function test_updateDelay_notSelf() public {
-        vm.expectRevert(abi.encodeWithSignature("OnlyCallableByThis()"));
+        vm.expectRevert(abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", address(this), executor.DEFAULT_ADMIN_ROLE()));
         executor.updateDelay(2 days);
     }
 
@@ -648,7 +624,7 @@ contract AuthBridgeExecutorUpdateTests is AuthBridgeExecutorTestBase {
     }
 
     function test_updateGracePeriod_notSelf() public {
-        vm.expectRevert(abi.encodeWithSignature("OnlyCallableByThis()"));
+        vm.expectRevert(abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", address(this), executor.DEFAULT_ADMIN_ROLE()));
         executor.updateGracePeriod(60 days);
     }
 
@@ -674,10 +650,10 @@ contract AuthBridgeExecutorUpdateTests is AuthBridgeExecutorTestBase {
 
 }
 
-contract AuthBridgeExecutorMiscTests is AuthBridgeExecutorTestBase {
+contract ExecutorMiscTests is ExecutorTestBase {
 
     function test_executeDelegateCall_notSelf() public {
-        vm.expectRevert(abi.encodeWithSignature("OnlyCallableByThis()"));
+        vm.expectRevert(abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", address(this), executor.DEFAULT_ADMIN_ROLE()));
         executor.executeDelegateCall(address(0), "");
     }
 
