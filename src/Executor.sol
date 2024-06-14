@@ -15,6 +15,9 @@ contract Executor is IExecutor, AccessControl {
 
     using Address for address;
 
+    bytes32 public constant SUBMISSION_ROLE = keccak256('SUBMISSION_ROLE');
+    bytes32 public constant GUARDIAN_ROLE   = keccak256('GUARDIAN_ROLE');
+
     // Minimum allowed grace period, which reduces the risk of having an actions set expire due to network congestion
     uint256 constant MINIMUM_GRACE_PERIOD = 10 minutes;
 
@@ -22,8 +25,6 @@ contract Executor is IExecutor, AccessControl {
     uint256 private _delay;
     // Time after the execution time during which the actions set can be executed
     uint256 private _gracePeriod;
-    // Address with the ability of canceling actions sets
-    address private _guardian;
 
     // Number of actions sets
     uint256 private _actionsSetCounter;
@@ -33,32 +34,14 @@ contract Executor is IExecutor, AccessControl {
     mapping(bytes32 => bool) private _queuedActions;
 
     /**
-    * @dev Only guardian can call functions marked by this modifier.
-    **/
-    modifier onlyGuardian() {
-        if (msg.sender != _guardian) revert NotGuardian();
-        _;
-    }
-
-    /**
-    * @dev Only this contract can call functions marked by this modifier.
-    **/
-    modifier onlyThis() {
-        if (msg.sender != address(this)) revert OnlyCallableByThis();
-        _;
-    }
-
-    /**
     * @dev Constructor
     *
     * @param delay The delay before which an actions set can be executed
     * @param gracePeriod The time period after a delay during which an actions set can be executed
-    * @param guardian The address of the guardian, which can cancel queued proposals (can be zero)
     */
     constructor(
         uint256 delay,
-        uint256 gracePeriod,
-        address guardian
+        uint256 gracePeriod
     ) {
         if (
             gracePeriod < MINIMUM_GRACE_PERIOD
@@ -66,9 +49,12 @@ contract Executor is IExecutor, AccessControl {
 
         _updateDelay(delay);
         _updateGracePeriod(gracePeriod);
-        _updateGuardian(guardian);
+
+        _setRoleAdmin(SUBMISSION_ROLE, DEFAULT_ADMIN_ROLE);
+        _setRoleAdmin(GUARDIAN_ROLE,   DEFAULT_ADMIN_ROLE);
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(DEFAULT_ADMIN_ROLE, address(this));  // Necessary for self-referential calls to change configuration
     }
 
     /// @inheritdoc IExecutor
@@ -78,7 +64,7 @@ contract Executor is IExecutor, AccessControl {
         string[] memory signatures,
         bytes[] memory calldatas,
         bool[] memory withDelegatecalls
-    ) external override onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) external override onlyRole(SUBMISSION_ROLE) {
         if (targets.length == 0) revert EmptyTargets();
         uint256 targetsLength = targets.length;
         if (
@@ -160,7 +146,7 @@ contract Executor is IExecutor, AccessControl {
     }
 
     /// @inheritdoc IExecutor
-    function cancel(uint256 actionsSetId) external override onlyGuardian {
+    function cancel(uint256 actionsSetId) external override onlyRole(GUARDIAN_ROLE) {
         if (getCurrentState(actionsSetId) != ActionsSetState.Queued) revert OnlyQueuedActions();
 
         ActionsSet storage actionsSet = _actionsSets[actionsSetId];
@@ -185,17 +171,12 @@ contract Executor is IExecutor, AccessControl {
     }
 
     /// @inheritdoc IExecutor
-    function updateGuardian(address guardian) external override onlyThis {
-        _updateGuardian(guardian);
-    }
-
-    /// @inheritdoc IExecutor
-    function updateDelay(uint256 delay) external override onlyThis {
+    function updateDelay(uint256 delay) external override onlyRole(DEFAULT_ADMIN_ROLE) {
         _updateDelay(delay);
     }
 
     /// @inheritdoc IExecutor
-    function updateGracePeriod(uint256 gracePeriod) external override onlyThis {
+    function updateGracePeriod(uint256 gracePeriod) external override onlyRole(DEFAULT_ADMIN_ROLE) {
         if (gracePeriod < MINIMUM_GRACE_PERIOD) revert GracePeriodTooShort();
         _updateGracePeriod(gracePeriod);
     }
@@ -205,7 +186,7 @@ contract Executor is IExecutor, AccessControl {
         external
         payable
         override
-        onlyThis
+        onlyRole(DEFAULT_ADMIN_ROLE)
         returns (bytes memory)
     {
         return target.functionDelegateCall(data);
@@ -222,11 +203,6 @@ contract Executor is IExecutor, AccessControl {
     /// @inheritdoc IExecutor
     function getGracePeriod() external view override returns (uint256) {
         return _gracePeriod;
-    }
-
-    /// @inheritdoc IExecutor
-    function getGuardian() external view override returns (address) {
-        return _guardian;
     }
 
     /// @inheritdoc IExecutor
@@ -262,11 +238,6 @@ contract Executor is IExecutor, AccessControl {
     /// @inheritdoc IExecutor
     function isActionQueued(bytes32 actionHash) public view override returns (bool) {
         return _queuedActions[actionHash];
-    }
-
-    function _updateGuardian(address guardian) internal {
-        emit GuardianUpdate(_guardian, guardian);
-        _guardian = guardian;
     }
 
     function _updateDelay(uint256 delay) internal {

@@ -306,6 +306,13 @@ abstract contract CrosschainTestBase is Test {
     function test_selfReconfiguration() public {
         bridge.destination.selectFork();
 
+        L2BridgeExecutorArguments memory newL2BridgeExecutorParams = L2BridgeExecutorArguments({
+            ethereumGovernanceExecutor: defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
+            delay:                      1200,
+            gracePeriod:                1800,
+            guardian:                   makeAddr('newGuardian')
+        });
+
         assertEq(
             bridgeExecutor.getDelay(),
             defaultL2BridgeExecutorArgs.delay
@@ -315,20 +322,18 @@ abstract contract CrosschainTestBase is Test {
             defaultL2BridgeExecutorArgs.gracePeriod
         );
         assertEq(
-            bridgeExecutor.getGuardian(),
-            defaultL2BridgeExecutorArgs.guardian
+            bridgeExecutor.hasRole(bridgeExecutor.GUARDIAN_ROLE(), defaultL2BridgeExecutorArgs.guardian),
+            true
         );
-
-        L2BridgeExecutorArguments memory newL2BridgeExecutorParams = L2BridgeExecutorArguments({
-            ethereumGovernanceExecutor: defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
-            delay:                      1200,
-            gracePeriod:                1800,
-            guardian:                   makeAddr('newGuardian')
-        });
+        assertEq(
+            bridgeExecutor.hasRole(bridgeExecutor.GUARDIAN_ROLE(), newL2BridgeExecutorParams.guardian),
+            false
+        );
 
         IPayload reconfigurationPayload = IPayload(new ReconfigurationPayload(
             newL2BridgeExecutorParams.delay,
             newL2BridgeExecutorParams.gracePeriod,
+            defaultL2BridgeExecutorArgs.guardian,
             newL2BridgeExecutorParams.guardian
         ));
 
@@ -360,8 +365,12 @@ abstract contract CrosschainTestBase is Test {
             newL2BridgeExecutorParams.gracePeriod
         );
         assertEq(
-            bridgeExecutor.getGuardian(),
-            newL2BridgeExecutorParams.guardian
+            bridgeExecutor.hasRole(bridgeExecutor.GUARDIAN_ROLE(), defaultL2BridgeExecutorArgs.guardian),
+            false
+        );
+        assertEq(
+            bridgeExecutor.hasRole(bridgeExecutor.GUARDIAN_ROLE(), newL2BridgeExecutorParams.guardian),
+            true
         );
     }
 
