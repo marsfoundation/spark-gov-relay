@@ -65,8 +65,8 @@ contract ExecutorTestBase is Test {
 
     function setUp() public {
         executor = new Executor({
-            delay:       DELAY,
-            gracePeriod: GRACE_PERIOD
+            delay_:       DELAY,
+            gracePeriod_: GRACE_PERIOD
         });
         executor.grantRole(executor.SUBMISSION_ROLE(),     bridge);
         executor.grantRole(executor.GUARDIAN_ROLE(),       guardian);
@@ -154,13 +154,13 @@ contract ExecutorConstructorTests is ExecutorTestBase {
     function test_constructor_invalidInitParams_boundary() public {
         vm.expectRevert(abi.encodeWithSignature("InvalidInitParams()"));
         executor = new Executor({
-            delay:       DELAY,
-            gracePeriod: 10 minutes - 1
+            delay_:       DELAY,
+            gracePeriod_: 10 minutes - 1
         });
 
         executor = new Executor({
-            delay:       DELAY,
-            gracePeriod: 10 minutes
+            delay_:       DELAY,
+            gracePeriod_: 10 minutes
         });
     }
 
@@ -170,12 +170,12 @@ contract ExecutorConstructorTests is ExecutorTestBase {
         vm.expectEmit();
         emit GracePeriodUpdate(0, GRACE_PERIOD);
         executor = new Executor({
-            delay:       DELAY,
-            gracePeriod: GRACE_PERIOD
+            delay_:       DELAY,
+            gracePeriod_: GRACE_PERIOD
         });
 
-        assertEq(executor.getDelay(),       DELAY);
-        assertEq(executor.getGracePeriod(), GRACE_PERIOD);
+        assertEq(executor.delay(),       DELAY);
+        assertEq(executor.gracePeriod(), GRACE_PERIOD);
 
         assertEq(executor.hasRole(executor.DEFAULT_ADMIN_ROLE(), address(this)),     true);
         assertEq(executor.hasRole(executor.DEFAULT_ADMIN_ROLE(), address(executor)), true);
@@ -231,7 +231,7 @@ contract ExecutorQueueTests is ExecutorTestBase {
         bytes32 actionHash1 = _encodeHash(action, block.timestamp + DELAY);
         bytes32 actionHash2 = _encodeHash(action, block.timestamp + DELAY + 1);
 
-        assertEq(executor.getActionsSetCount(),        0);
+        assertEq(executor.actionsSetCount(),           0);
         assertEq(executor.isActionQueued(actionHash1), false);
         assertEq(executor.isActionQueued(actionHash2), false);
 
@@ -247,7 +247,7 @@ contract ExecutorQueueTests is ExecutorTestBase {
         );
         _queueAction(action);
 
-        assertEq(executor.getActionsSetCount(),        1);
+        assertEq(executor.actionsSetCount(),           1);
         assertEq(executor.isActionQueued(actionHash1), true);
         assertEq(executor.isActionQueued(actionHash2), false);
         _assertActionSet({
@@ -272,7 +272,7 @@ contract ExecutorQueueTests is ExecutorTestBase {
         );
         _queueAction(action);
 
-        assertEq(executor.getActionsSetCount(),        2);
+        assertEq(executor.actionsSetCount(),           2);
         assertEq(executor.isActionQueued(actionHash1), true);
         assertEq(executor.isActionQueued(actionHash2), true);
         _assertActionSet({
@@ -289,14 +289,14 @@ contract ExecutorQueueTests is ExecutorTestBase {
 contract ExecutorExecuteTests is ExecutorTestBase {
 
     function test_execute_actionsSetIdTooHigh_boundary() public {
-        assertEq(executor.getActionsSetCount(), 0);
+        assertEq(executor.actionsSetCount(),    0);
         vm.expectRevert(abi.encodeWithSignature("InvalidActionsSetId()"));
         executor.execute(0);
 
         _queueAction();
         skip(DELAY);
 
-        assertEq(executor.getActionsSetCount(), 1);
+        assertEq(executor.actionsSetCount(),    1);
         executor.execute(0);
     }
 
@@ -304,7 +304,7 @@ contract ExecutorExecuteTests is ExecutorTestBase {
         _queueAction();
         vm.prank(guardian);
         executor.cancel(0);
-        
+
         vm.expectRevert(abi.encodeWithSignature("OnlyQueuedActions()"));
         executor.execute(0);
     }
@@ -314,7 +314,7 @@ contract ExecutorExecuteTests is ExecutorTestBase {
         skip(DELAY);
 
         executor.execute(0);
-        
+
         vm.expectRevert(abi.encodeWithSignature("OnlyQueuedActions()"));
         executor.execute(0);
     }
@@ -322,7 +322,7 @@ contract ExecutorExecuteTests is ExecutorTestBase {
     function test_execute_notQueued_expired_boundary() public {
         _queueAction();
         skip(DELAY + GRACE_PERIOD + 1);
-        
+
         vm.expectRevert(abi.encodeWithSignature("OnlyQueuedActions()"));
         executor.execute(0);
 
@@ -334,7 +334,7 @@ contract ExecutorExecuteTests is ExecutorTestBase {
     function test_execute_timelockNotFinished_boundary() public {
         _queueAction();
         skip(DELAY - 1);
-        
+
         vm.expectRevert(abi.encodeWithSignature("TimelockNotFinished()"));
         executor.execute(0);
 
@@ -536,7 +536,7 @@ contract ExecutorCancelTests is ExecutorTestBase {
     }
 
     function test_cancel_actionsSetIdTooHigh_boundary() public {
-        assertEq(executor.getActionsSetCount(), 0);
+        assertEq(executor.actionsSetCount(),    0);
         vm.expectRevert(abi.encodeWithSignature("InvalidActionsSetId()"));
         vm.prank(guardian);
         executor.cancel(0);
@@ -544,7 +544,7 @@ contract ExecutorCancelTests is ExecutorTestBase {
         _queueAction();
         skip(DELAY);
 
-        assertEq(executor.getActionsSetCount(), 1);
+        assertEq(executor.actionsSetCount(),    1);
         vm.prank(guardian);
         executor.cancel(0);
     }
@@ -553,7 +553,7 @@ contract ExecutorCancelTests is ExecutorTestBase {
         _queueAction();
         vm.prank(guardian);
         executor.cancel(0);
-        
+
         vm.expectRevert(abi.encodeWithSignature("OnlyQueuedActions()"));
         vm.prank(guardian);
         executor.cancel(0);
@@ -564,7 +564,7 @@ contract ExecutorCancelTests is ExecutorTestBase {
         skip(DELAY);
 
         executor.execute(0);
-        
+
         vm.expectRevert(abi.encodeWithSignature("OnlyQueuedActions()"));
         vm.prank(guardian);
         executor.cancel(0);
@@ -573,7 +573,7 @@ contract ExecutorCancelTests is ExecutorTestBase {
     function test_cancel_notQueued_expired_boundary() public {
         _queueAction();
         skip(DELAY + GRACE_PERIOD + 1);
-        
+
         vm.expectRevert(abi.encodeWithSignature("OnlyQueuedActions()"));
         vm.prank(guardian);
         executor.cancel(0);
@@ -613,14 +613,14 @@ contract ExecutorUpdateTests is ExecutorTestBase {
     }
 
     function test_updateDelay() public {
-        assertEq(executor.getDelay(), 1 days);
+        assertEq(executor.delay(), 1 days);
 
         vm.expectEmit(address(executor));
         emit DelayUpdate(1 days, 2 days);
         vm.prank(address(executor));
         executor.updateDelay(2 days);
 
-        assertEq(executor.getDelay(), 2 days);
+        assertEq(executor.delay(), 2 days);
     }
 
     function test_updateGracePeriod_notSelf() public {
@@ -638,14 +638,14 @@ contract ExecutorUpdateTests is ExecutorTestBase {
     }
 
     function test_updateGracePeriod() public {
-        assertEq(executor.getGracePeriod(), 30 days);
+        assertEq(executor.gracePeriod(), 30 days);
 
         vm.expectEmit(address(executor));
         emit GracePeriodUpdate(30 days, 60 days);
         vm.prank(address(executor));
         executor.updateGracePeriod(60 days);
 
-        assertEq(executor.getGracePeriod(), 60 days);
+        assertEq(executor.gracePeriod(), 60 days);
     }
 
 }
