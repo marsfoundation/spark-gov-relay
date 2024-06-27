@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.10;
 
-import { IPayload } from '../interfaces/IPayload.sol';
+import { IPayload } from '../payloads/IPayload.sol';
 
 /**
  * @dev This payload simply emits an event on execution

@@ -7,23 +7,7 @@ import { ArbitrumBridgeTesting } from 'lib/xchain-helpers/src/testing/bridges/Ar
 import { ArbitrumForwarder }     from 'lib/xchain-helpers/src/forwarders/ArbitrumForwarder.sol';
 import { ArbitrumReceiver }      from 'lib/xchain-helpers/src/receivers/ArbitrumReceiver.sol';
 
-contract ArbitrumOneCrosschainPayload is CrosschainPayload {
-
-    constructor(IPayload _targetPayload, address _bridgeReceiver)
-        CrosschainPayload(_targetPayload, _bridgeReceiver) {}
-
-    function execute() external override {
-        ArbitrumForwarder.sendMessageL1toL2(
-            ArbitrumForwarder.L1_CROSS_DOMAIN_ARBITRUM_ONE,
-            bridgeReceiver,
-            encodeCrosschainExecutionMessage(),
-            1_000_000,
-            1 gwei,
-            block.basefee + 10 gwei
-        );
-    }
-
-}
+import { ArbitrumCrosschainPayload } from './payloads/ArbitrumCrosschainPayload.sol';
 
 contract ArbitrumOneCrosschainTest is CrosschainTestBase {
 
@@ -31,31 +15,25 @@ contract ArbitrumOneCrosschainTest is CrosschainTestBase {
     using ArbitrumBridgeTesting for *;
 
     function deployCrosschainPayload(IPayload targetPayload, address bridgeReceiver)
-        public override returns (IPayload)
+        internal override returns (IPayload)
     {
-        return IPayload(new ArbitrumOneCrosschainPayload(targetPayload, bridgeReceiver));
+        return IPayload(new ArbitrumCrosschainPayload(ArbitrumForwarder.L1_CROSS_DOMAIN_ARBITRUM_ONE, targetPayload, bridgeReceiver));
     }
 
-    function setUp() public {
+    function setupDomain() internal override {
+        remote = getChain('arbitrum_one').createFork();
         bridge = ArbitrumBridgeTesting.createNativeBridge(
-            getChain('mainnet').createFork(),
-            getChain('arbitrum_one').createFork()
+            mainnet,
+            remote
         );
 
-        bridge.destination.selectFork();
-        bridgeExecutor = new Executor(
-            defaultL2BridgeExecutorArgs.delay,
-            defaultL2BridgeExecutorArgs.gracePeriod
-        );
+        remote.selectFork();
         bridgeReceiver = address(new ArbitrumReceiver(
             defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
-            address(bridgeExecutor)
+            vm.computeCreateAddress(address(this), 3)
         ));
-        bridgeExecutor.grantRole(bridgeExecutor.SUBMISSION_ROLE(),     bridgeReceiver);
-        bridgeExecutor.grantRole(bridgeExecutor.GUARDIAN_ROLE(),       defaultL2BridgeExecutorArgs.guardian);
-        bridgeExecutor.revokeRole(bridgeExecutor.DEFAULT_ADMIN_ROLE(), address(this));
 
-        bridge.source.selectFork();
+        mainnet.selectFork();
         vm.deal(L1_EXECUTOR, 0.01 ether);
     }
 
