@@ -3,7 +3,7 @@ pragma solidity ^0.8.10;
 
 import { IExecutor } from 'src/interfaces/IExecutor.sol';
 
-import { IPayload } from '../interfaces/IPayload.sol';
+import { IPayload } from '../payloads/IPayload.sol';
 
 /**
  * @dev This payload reconfigures bridge executor to a given state

@@ -3,17 +3,24 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 
+import { Domain }        from 'lib/xchain-helpers/src/testing/Domain.sol';
 import { Bridge }        from 'lib/xchain-helpers/src/testing/Bridge.sol';
 import { DomainHelpers } from 'lib/xchain-helpers/src/testing/Domain.sol';
 
 import { IExecutor } from 'src/interfaces/IExecutor.sol';
 import { Executor }  from 'src/Executor.sol';
 
-import { IL1Executor } from './interfaces/IL1Executor.sol';
-import { IPayload }    from './interfaces/IPayload.sol';
+import { IPayload } from './payloads/IPayload.sol';
 
 import { PayloadWithEmit }        from './mocks/PayloadWithEmit.sol';
 import { ReconfigurationPayload } from './mocks/ReconfigurationPayload.sol';
+
+interface IL1Executor {
+    function exec(address target, bytes calldata args)
+        external
+        payable
+        returns (bytes memory out);
+}
 
 struct L2BridgeExecutorArguments {
     address ethereumGovernanceExecutor;
@@ -22,73 +29,56 @@ struct L2BridgeExecutorArguments {
     address guardian;
 }
 
-abstract contract CrosschainPayload is IPayload {
-
-    IPayload immutable targetPayload;
-    address immutable bridgeReceiver;
-
-    constructor(IPayload _targetPayload, address _bridgeReceiver) {
-        targetPayload  = _targetPayload;
-        bridgeReceiver = _bridgeReceiver;
-    }
-
-    function execute() external virtual;
-
-    function encodeCrosschainExecutionMessage() internal view returns (bytes memory) {
-        address[] memory targets = new address[](1);
-        targets[0] = address(targetPayload);
-        uint256[] memory values = new uint256[](1);
-        values[0] = 0;
-        string[] memory signatures = new string[](1);
-        signatures[0] = 'execute()';
-        bytes[] memory calldatas = new bytes[](1);
-        calldatas[0] = '';
-        bool[] memory withDelegatecalls = new bool[](1);
-        withDelegatecalls[0] = true;
-
-        return abi.encodeWithSelector(
-            IExecutor.queue.selector,
-            targets,
-            values,
-            signatures,
-            calldatas,
-            withDelegatecalls
-        );
-    }
-
-}
-
 abstract contract CrosschainTestBase is Test {
 
     using DomainHelpers for *;
 
     event TestEvent();
 
-    address public constant L1_EXECUTOR    = 0x3300f198988e4C9C63F75dF86De36421f06af8c4;
-    address public constant L1_PAUSE_PROXY = 0xBE8E3e3618f7474F8cB1d074A26afFef007E98FB;
-    address public GUARDIAN                = makeAddr('guardian');
+    address constant L1_EXECUTOR    = 0x3300f198988e4C9C63F75dF86De36421f06af8c4;
+    address constant L1_PAUSE_PROXY = 0xBE8E3e3618f7474F8cB1d074A26afFef007E98FB;
+    address GUARDIAN                = makeAddr('guardian');
 
-    L2BridgeExecutorArguments public defaultL2BridgeExecutorArgs = L2BridgeExecutorArguments({
+    L2BridgeExecutorArguments defaultL2BridgeExecutorArgs = L2BridgeExecutorArguments({
         ethereumGovernanceExecutor: L1_EXECUTOR,
         delay:                      600,
         gracePeriod:                1200,
         guardian:                   GUARDIAN
     });
 
-    Bridge public bridge;
+    Domain mainnet;
+    Domain remote;
+    Bridge bridge;
 
-    Executor public bridgeExecutor;
-    address  public bridgeReceiver;
+    Executor bridgeExecutor;
+    address  bridgeReceiver;
 
-    function deployCrosschainPayload(IPayload targetPayload, address bridgeReceiver) public virtual returns (IPayload);
+    function setUp() public {
+        mainnet = getChain("mainnet").createFork();
+
+        setupDomain();
+
+        remote.selectFork();
+
+        bridgeExecutor = new Executor(
+            defaultL2BridgeExecutorArgs.delay,
+            defaultL2BridgeExecutorArgs.gracePeriod
+        );
+        bridgeExecutor.grantRole(bridgeExecutor.SUBMISSION_ROLE(),     bridgeReceiver);
+        bridgeExecutor.grantRole(bridgeExecutor.GUARDIAN_ROLE(),       defaultL2BridgeExecutorArgs.guardian);
+        bridgeExecutor.revokeRole(bridgeExecutor.DEFAULT_ADMIN_ROLE(), address(this));
+    }
+
+    function deployCrosschainPayload(IPayload targetPayload, address bridgeReceiver) internal virtual returns (IPayload);
     function relayMessagesAcrossBridge() internal virtual;
+    function setupDomain() internal virtual;
 
-    function preparePayloadExecution() public {
-        bridge.destination.selectFork();
+    function preparePayloadExecution() internal {
+        remote.selectFork();
 
         IPayload targetPayload = IPayload(new PayloadWithEmit());
 
-        bridge.source.selectFork();
+        mainnet.selectFork();
 
         IPayload crosschainPayload = deployCrosschainPayload(
             targetPayload,
@@ -304,7 +294,7 @@ abstract contract CrosschainTestBase is Test {
     }
 
     function test_selfReconfiguration() public {
-        bridge.destination.selectFork();
+        remote.selectFork();
 
         L2BridgeExecutorArguments memory newL2BridgeExecutorParams = L2BridgeExecutorArguments({
             ethereumGovernanceExecutor: defaultL2BridgeExecutorArgs.ethereumGovernanceExecutor,
@@ -337,7 +327,7 @@ abstract contract CrosschainTestBase is Test {
             newL2BridgeExecutorParams.guardian
         ));
 
-        bridge.source.selectFork();
+        mainnet.selectFork();
 
         IPayload crosschainPayload = deployCrosschainPayload(
             reconfigurationPayload,
