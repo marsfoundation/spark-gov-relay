@@ -21,7 +21,6 @@ interface IExecutor is IAccessControl {
     error InvalidActionsSetId();
     error EmptyTargets();
     error InconsistentParamsLength();
-    error DuplicateAction();
     error InsufficientBalance();
 
     /******************************************************************************************************************/
@@ -152,14 +151,6 @@ interface IExecutor is IAccessControl {
      * @return The value of the grace period (in seconds)
      **/
     function gracePeriod() external view returns (uint256);
-
-    /**
-     * @notice Returns whether an actions set (by actionHash) is queued.
-     * @dev    actionHash = keccak256(abi.encode(target, value, signature, data, executionTime, withDelegatecall)).
-     * @param  actionHash hash of the action to be checked.
-     * @return True if the underlying action of actionHash is queued, false otherwise.
-     **/
-    function isActionQueued(bytes32 actionHash) external view returns (bool);
 
     /******************************************************************************************************************/
     /*** ActionSet functions                                                                                        ***/

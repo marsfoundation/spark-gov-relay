@@ -31,8 +31,6 @@ contract Executor is IExecutor, AccessControl {
     uint256 public override delay;            // Time between queuing and execution
     uint256 public override gracePeriod;      // Time after delay during which an actions set can be executed
 
-    mapping(bytes32 => bool) public override isActionQueued;
-
     /**
     *  @dev   Constructor
     *  @param delay_       The delay before which an actions set can be executed.
@@ -82,22 +80,6 @@ contract Executor is IExecutor, AccessControl {
         uint256 executionTime = block.timestamp + delay;
 
         unchecked { ++actionsSetCount; }
-
-        for (uint256 i = 0; i < targetsLength; ++i) {
-            bytes32 actionHash = keccak256(
-                abi.encode(
-                    targets[i],
-                    values[i],
-                    signatures[i],
-                    calldatas[i],
-                    executionTime,
-                    withDelegatecalls[i]
-                )
-            );
-            if (isActionQueued[actionHash]) revert DuplicateAction();
-
-            isActionQueued[actionHash] = true;
-        }
 
         ActionsSet storage actionsSet = _actionsSets[actionsSetId];
 
@@ -152,18 +134,6 @@ contract Executor is IExecutor, AccessControl {
 
         ActionsSet storage actionsSet = _actionsSets[actionsSetId];
         actionsSet.canceled = true;
-
-        uint256 targetsLength = actionsSet.targets.length;
-        for (uint256 i = 0; i < targetsLength; ++i) {
-            _removeActionFromQueue(
-                actionsSet.targets[i],
-                actionsSet.values[i],
-                actionsSet.signatures[i],
-                actionsSet.calldatas[i],
-                actionsSet.executionTime,
-                actionsSet.withDelegatecalls[i]
-            );
-        }
 
         emit ActionsSetCanceled(actionsSetId);
     }
@@ -243,8 +213,6 @@ contract Executor is IExecutor, AccessControl {
     ) internal returns (bytes memory) {
         if (address(this).balance < value) revert InsufficientBalance();
 
-        _removeActionFromQueue(target, value, signature, data, executionTime, withDelegatecall);
-
         bytes memory callData = bytes(signature).length == 0
             ? data
             : abi.encodePacked(bytes4(keccak256(bytes(signature))), data);
@@ -252,20 +220,6 @@ contract Executor is IExecutor, AccessControl {
         if (withDelegatecall) return this.executeDelegateCall{value: value}(target, callData);
 
         return target.functionCallWithValue(callData, value);
-    }
-
-    function _removeActionFromQueue(
-        address target,
-        uint256 value,
-        string memory signature,
-        bytes memory data,
-        uint256 executionTime,
-        bool withDelegatecall
-    ) internal {
-        bytes32 actionHash = keccak256(
-            abi.encode(target, value, signature, data, executionTime, withDelegatecall)
-        );
-        isActionQueued[actionHash] = false;
     }
 
     /******************************************************************************************************************/
