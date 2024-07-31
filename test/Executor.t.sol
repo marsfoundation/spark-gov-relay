@@ -120,21 +120,6 @@ contract ExecutorTestBase is Test {
         _queueAction(action);
     }
 
-    function _encodeHash(Action memory action, uint256 index, uint256 executionTime) internal pure returns (bytes32) {
-        return keccak256(abi.encode(
-            action.targets[index],
-            action.values[index],
-            action.signatures[index],
-            action.calldatas[index],
-            executionTime,
-            action.withDelegatecalls[index]
-        ));
-    }
-
-    function _encodeHash(Action memory action, uint256 executionTime) internal pure returns (bytes32) {
-        return _encodeHash(action, 0, executionTime);
-    }
-
     function _assertActionSet(uint256 id, bool executed, bool canceled, uint256 executionTime, Action memory action) internal view {
         IExecutor.ActionsSet memory actionsSet = executor.getActionsSetById(id);
         assertEq(actionsSet.targets,           action.targets);
@@ -218,22 +203,10 @@ contract ExecutorQueueTests is ExecutorTestBase {
         executor.queue(new address[](1), new uint256[](1), new string[](1), new bytes[](1), new bool[](2));
     }
 
-    function test_queue_duplicateAction() public {
-        Action memory action = _getDefaultAction();
-        _queueAction(action);
-
-        vm.expectRevert(abi.encodeWithSignature("DuplicateAction()"));
-        _queueAction(action);
-    }
-
     function test_queue() public {
         Action memory action = _getDefaultAction();
-        bytes32 actionHash1 = _encodeHash(action, block.timestamp + DELAY);
-        bytes32 actionHash2 = _encodeHash(action, block.timestamp + DELAY + 1);
 
         assertEq(executor.actionsSetCount(),           0);
-        assertEq(executor.isActionQueued(actionHash1), false);
-        assertEq(executor.isActionQueued(actionHash2), false);
 
         vm.expectEmit(address(executor));
         emit ActionsSetQueued(
@@ -248,8 +221,6 @@ contract ExecutorQueueTests is ExecutorTestBase {
         _queueAction(action);
 
         assertEq(executor.actionsSetCount(),           1);
-        assertEq(executor.isActionQueued(actionHash1), true);
-        assertEq(executor.isActionQueued(actionHash2), false);
         _assertActionSet({
             id:            0,
             executed:      false,
@@ -273,8 +244,6 @@ contract ExecutorQueueTests is ExecutorTestBase {
         _queueAction(action);
 
         assertEq(executor.actionsSetCount(),           2);
-        assertEq(executor.isActionQueued(actionHash1), true);
-        assertEq(executor.isActionQueued(actionHash2), true);
         _assertActionSet({
             id:            1,
             executed:      false,
@@ -427,11 +396,9 @@ contract ExecutorExecuteTests is ExecutorTestBase {
 
     function test_execute_delegateCall() public {
         Action memory action = _getDefaultAction();
-        bytes32 actionHash = _encodeHash(action, block.timestamp + DELAY);
         _queueAction(action);
         skip(DELAY);
 
-        assertEq(executor.isActionQueued(actionHash),    true);
         assertEq(executor.getActionsSetById(0).executed, false);
         assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutor.ActionsSetState.Queued));
 
@@ -443,7 +410,6 @@ contract ExecutorExecuteTests is ExecutorTestBase {
         emit ActionsSetExecuted(0, address(this), returnedData);
         executor.execute(0);
 
-        assertEq(executor.isActionQueued(actionHash),    false);
         assertEq(executor.getActionsSetById(0).executed, true);
         assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutor.ActionsSetState.Executed));
     }
@@ -451,11 +417,9 @@ contract ExecutorExecuteTests is ExecutorTestBase {
     function test_execute_call() public {
         Action memory action = _getDefaultAction();
         action.withDelegatecalls[0] = false;
-        bytes32 actionHash = _encodeHash(action, block.timestamp + DELAY);
         _queueAction(action);
         skip(DELAY);
 
-        assertEq(executor.isActionQueued(actionHash),    true);
         assertEq(executor.getActionsSetById(0).executed, false);
         assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutor.ActionsSetState.Queued));
 
@@ -467,7 +431,6 @@ contract ExecutorExecuteTests is ExecutorTestBase {
         emit ActionsSetExecuted(0, address(this), returnedData);
         executor.execute(0);
 
-        assertEq(executor.isActionQueued(actionHash),    false);
         assertEq(executor.getActionsSetById(0).executed, true);
         assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutor.ActionsSetState.Executed));
     }
@@ -476,11 +439,9 @@ contract ExecutorExecuteTests is ExecutorTestBase {
         Action memory action = _getDefaultAction();
         action.signatures[0] = "";
         action.calldatas[0]  = abi.encodeWithSignature("execute()");
-        bytes32 actionHash = _encodeHash(action, block.timestamp + DELAY);
         _queueAction(action);
         skip(DELAY);
 
-        assertEq(executor.isActionQueued(actionHash),    true);
         assertEq(executor.getActionsSetById(0).executed, false);
         assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutor.ActionsSetState.Queued));
 
@@ -492,7 +453,6 @@ contract ExecutorExecuteTests is ExecutorTestBase {
         emit ActionsSetExecuted(0, address(this), returnedData);
         executor.execute(0);
 
-        assertEq(executor.isActionQueued(actionHash),    false);
         assertEq(executor.getActionsSetById(0).executed, true);
         assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutor.ActionsSetState.Executed));
     }
@@ -502,11 +462,9 @@ contract ExecutorExecuteTests is ExecutorTestBase {
         action.signatures[0]        = "";
         action.calldatas[0]         = abi.encodeWithSignature("execute()");
         action.withDelegatecalls[0] = false;
-        bytes32 actionHash = _encodeHash(action, block.timestamp + DELAY);
         _queueAction(action);
         skip(DELAY);
 
-        assertEq(executor.isActionQueued(actionHash),    true);
         assertEq(executor.getActionsSetById(0).executed, false);
         assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutor.ActionsSetState.Queued));
 
@@ -518,7 +476,6 @@ contract ExecutorExecuteTests is ExecutorTestBase {
         emit ActionsSetExecuted(0, address(this), returnedData);
         executor.execute(0);
 
-        assertEq(executor.isActionQueued(actionHash),    false);
         assertEq(executor.getActionsSetById(0).executed, true);
         assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutor.ActionsSetState.Executed));
     }
@@ -586,10 +543,8 @@ contract ExecutorCancelTests is ExecutorTestBase {
 
     function test_cancel() public {
         Action memory action = _getDefaultAction();
-        bytes32 actionHash = _encodeHash(action, block.timestamp + DELAY);
         _queueAction(action);
 
-        assertEq(executor.isActionQueued(actionHash),    true);
         assertEq(executor.getActionsSetById(0).canceled, false);
         assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutor.ActionsSetState.Queued));
 
@@ -598,7 +553,6 @@ contract ExecutorCancelTests is ExecutorTestBase {
         vm.prank(guardian);
         executor.cancel(0);
 
-        assertEq(executor.isActionQueued(actionHash),    false);
         assertEq(executor.getActionsSetById(0).canceled, true);
         assertEq(uint8(executor.getCurrentState(0)),     uint8(IExecutor.ActionsSetState.Canceled));
     }
