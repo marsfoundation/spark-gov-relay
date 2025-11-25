@@ -1,0 +1,23 @@
+{
+  "lib/LayerZero-v2": {
+    "rev": "200cda254120375f40ed0a7e89931afb897b8891"
+  },
+  "lib/devtools": {
+    "rev": "73f732acf683ca18b74cd6c6adb3d656d2e0f36a"
+  },
+  "lib/forge-std": {
+    "rev": "52715a217dc51d0de15877878ab8213f6cbbbab5"
+  },
+  "lib/openzeppelin-contracts": {
+    "rev": "dbb6104ce834628e473d2173bbc9d47f81a9eec3"
+  },
+  "lib/solidity-bytes-utils": {
+    "rev": "f4413cd6137b78403e3a1156bee6aceab46b46fa"
+  },
+  "lib/spark-address-registry": {
+    "rev": "121e0fcd77732075aaa81065d24f79a519794fa4"
+  },
+  "lib/xchain-helpers": {
+    "rev": "33baf1e96833cb0d1de0ca57c115459b76565fd4"
+  }
+}
