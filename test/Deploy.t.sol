@@ -3,7 +3,8 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 
-import { OptimismReceiver } from 'lib/xchain-helpers/src/receivers/OptimismReceiver.sol';
+import { LZGovBridgeReceiver } from 'lib/xchain-helpers/src/receivers/LZGovBridgeReceiver.sol';
+import { OptimismReceiver }    from 'lib/xchain-helpers/src/receivers/OptimismReceiver.sol';
 
 import { Deploy } from "../deploy/Deploy.sol";
 
@@ -25,6 +26,22 @@ contract DeployTests is Test {
 
         assertEq(OptimismReceiver(receiver).l1Authority(), makeAddr("l1Authority"));
         assertEq(OptimismReceiver(receiver).target(),      makeAddr("executor"));
+    }
+
+    function test_deployLZGovBridgeReceiver() public {
+        LZGovBridgeReceiver receiver = LZGovBridgeReceiver(payable(
+            Deploy.deployLZGovBridgeReceiver(
+                makeAddr("govOappReceiver"),
+                30101,
+                makeAddr("srcAuthority"),
+                makeAddr("executor")
+            )
+        ));
+
+        assertEq(receiver.govOappReceiver(), makeAddr("govOappReceiver"));
+        assertEq(receiver.srcEid(),          30101);
+        assertEq(receiver.srcAuthority(),    makeAddr("srcAuthority"));
+        assertEq(receiver.target(),          makeAddr("executor"));
     }
 
     function test_setUpExecutorPermissions() public {

@@ -5,7 +5,8 @@ import { console } from "forge-std/console.sol";
 
 import { Ethereum } from "lib/spark-address-registry/src/Ethereum.sol";
 
-import { LZForwarder } from "lib/xchain-helpers/src/forwarders/LZForwarder.sol";
+import { LZForwarder }            from "lib/xchain-helpers/src/forwarders/LZForwarder.sol";
+import { LZGovBridgeForwarder }   from "lib/xchain-helpers/src/forwarders/LZGovBridgeForwarder.sol";
 
 import { Script } from 'forge-std/Script.sol';
 
@@ -80,6 +81,33 @@ contract DeployUnichainExecutor is Script {
 
         address executor = Deploy.deployExecutor(0, 7 days);
         address receiver = Deploy.deployOptimismReceiver(Ethereum.SPARK_PROXY, executor);
+
+        console.log("executor deployed at:", executor);
+        console.log("receiver deployed at:", receiver);
+
+        Deploy.setUpExecutorPermissions(executor, receiver, msg.sender);
+
+        vm.stopBroadcast();
+    }
+
+}
+
+contract DeployLZGovBridgeBaseExecutor is Script {
+
+    function run() public {
+        vm.createSelectFork(getChain("base").rpcUrl);
+
+        address govOappReceiver = vm.envAddress("GOV_OAPP_RECEIVER");
+
+        vm.startBroadcast();
+
+        address executor = Deploy.deployExecutor(0, 7 days);
+        address receiver = Deploy.deployLZGovBridgeReceiver({
+            govOappReceiver : govOappReceiver,
+            srcEid          : LZGovBridgeForwarder.ENDPOINT_ID_ETHEREUM,
+            srcAuthority    : Ethereum.SPARK_PROXY,
+            executor        : executor
+        });
 
         console.log("executor deployed at:", executor);
         console.log("receiver deployed at:", receiver);
