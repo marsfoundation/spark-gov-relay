@@ -11,10 +11,9 @@ contract LZGovBridgeCrosschainPayload is CrosschainPayload {
 
     using OptionsBuilder for bytes;
 
+    uint32  public immutable dstEid;
     address public immutable govOapp;
     address public immutable receiver;
-
-    uint32 public immutable dstEid;
 
     constructor(
         uint32   _dstEid,

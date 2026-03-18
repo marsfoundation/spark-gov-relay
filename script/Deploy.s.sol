@@ -92,33 +92,6 @@ contract DeployUnichainExecutor is Script {
 
 }
 
-contract DeployLZGovBridgeBaseExecutor is Script {
-
-    function run() public {
-        vm.createSelectFork(getChain("base").rpcUrl);
-
-        address govOappReceiver = vm.envAddress("GOV_OAPP_RECEIVER");
-
-        vm.startBroadcast();
-
-        address executor = Deploy.deployExecutor(0, 7 days);
-        address receiver = Deploy.deployLZGovBridgeReceiver({
-            govOappReceiver : govOappReceiver,
-            srcEid          : LZGovBridgeForwarder.ENDPOINT_ID_ETHEREUM,
-            srcAuthority    : Ethereum.SPARK_PROXY,
-            executor        : executor
-        });
-
-        console.log("executor deployed at:", executor);
-        console.log("receiver deployed at:", receiver);
-
-        Deploy.setUpExecutorPermissions(executor, receiver, msg.sender);
-
-        vm.stopBroadcast();
-    }
-
-}
-
 contract DeployAvalancheExecutor is Script {
 
     function run() public {
@@ -134,6 +107,32 @@ contract DeployAvalancheExecutor is Script {
             executor            : executor,
             delegate            : address(1),
             owner               : address(1)
+        });
+
+        console.log("executor deployed at:", executor);
+        console.log("receiver deployed at:", receiver);
+
+        Deploy.setUpExecutorPermissions(executor, receiver, msg.sender);
+
+        vm.stopBroadcast();
+    }
+
+}
+
+contract DeployLZGovBridgeExecutor is Script {
+
+    function run() public {
+        vm.createSelectFork(vm.envString("DESTINATION_RPC_URL"));
+        address govOappReceiver = vm.envAddress("GOV_OAPP_RECEIVER");
+
+        vm.startBroadcast();
+
+        address executor = Deploy.deployExecutor(0, 7 days);
+        address receiver = Deploy.deployLZGovBridgeReceiver({
+            govOappReceiver : govOappReceiver,
+            srcEid          : LZGovBridgeForwarder.ENDPOINT_ID_ETHEREUM,
+            srcAuthority    : Ethereum.SPARK_PROXY,
+            executor        : executor
         });
 
         console.log("executor deployed at:", executor);

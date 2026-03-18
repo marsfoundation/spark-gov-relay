@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import { ArbitrumReceiver }    from 'lib/xchain-helpers/src/receivers/ArbitrumReceiver.sol';
-import { LZGovBridgeReceiver } from 'lib/xchain-helpers/src/receivers/LZGovBridgeReceiver.sol';
 import { LZReceiver }          from 'lib/xchain-helpers/src/receivers/LZReceiver.sol';
+import { LZGovBridgeReceiver } from 'lib/xchain-helpers/src/receivers/LZGovBridgeReceiver.sol';
 import { OptimismReceiver }    from 'lib/xchain-helpers/src/receivers/OptimismReceiver.sol';
 
 import { Executor } from 'src/Executor.sol';
@@ -56,12 +56,12 @@ library Deploy {
     )
         internal returns (address receiver)
     {
-        receiver = address(new LZGovBridgeReceiver(
-            govOappReceiver,
-            srcEid,
-            srcAuthority,
-            executor
-        ));
+        receiver = address(new LZGovBridgeReceiver({
+            _govOappReceiver : govOappReceiver,
+            _srcEid          : srcEid,
+            _srcAuthority    : srcAuthority,
+            _target          : executor
+        }));
     }
 
     function setUpExecutorPermissions(address executor_, address receiver, address deployer)

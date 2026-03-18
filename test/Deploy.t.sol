@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 
-import { LZGovBridgeReceiver } from 'lib/xchain-helpers/src/receivers/LZGovBridgeReceiver.sol';
 import { OptimismReceiver }    from 'lib/xchain-helpers/src/receivers/OptimismReceiver.sol';
+import { LZGovBridgeReceiver } from 'lib/xchain-helpers/src/receivers/LZGovBridgeReceiver.sol';
 
 import { Deploy } from "../deploy/Deploy.sol";
 

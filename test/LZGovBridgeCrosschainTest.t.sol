@@ -5,7 +5,8 @@ import './CrosschainTestBase.sol';
 
 import { LZBridgeTesting }                      from 'lib/xchain-helpers/src/testing/bridges/LZBridgeTesting.sol';
 import { LZGovBridgeForwarder }                  from 'lib/xchain-helpers/src/forwarders/LZGovBridgeForwarder.sol';
-import { LZGovBridgeReceiver }                   from 'lib/xchain-helpers/src/receivers/LZGovBridgeReceiver.sol';
+
+import { Deploy } from '../deploy/Deploy.sol';
 
 import { GovernanceOAppReceiverMock } from 'lib/xchain-helpers/test/mocks/lz/GovernanceOAppReceiverMock.sol';
 
@@ -87,12 +88,12 @@ contract LZGovBridgeCrosschainTest is CrosschainTestBase {
         assertEq(address(govOappReceiver), expectedGovOappReceiver);
 
         // bridgeExecutor will be deployed at nonce+2 by super.setUp()
-        bridgeReceiver = address(new LZGovBridgeReceiver(
-            address(govOappReceiver),
-            LZGovBridgeForwarder.ENDPOINT_ID_ETHEREUM,
-            L1_SPARK_PROXY,
-            vm.computeCreateAddress(address(this), nonce + 2)
-        ));
+        bridgeReceiver = Deploy.deployLZGovBridgeReceiver({
+            govOappReceiver : address(govOappReceiver),
+            srcEid          : LZGovBridgeForwarder.ENDPOINT_ID_ETHEREUM,
+            srcAuthority    : L1_SPARK_PROXY,
+            executor        : vm.computeCreateAddress(address(this), nonce + 2)
+        });
         assertEq(bridgeReceiver, expectedGovBridgeReceiver);
     }
 
