@@ -26,6 +26,9 @@ contract LZGovBridgeCrosschainTest is CrosschainTestBase {
     using DomainHelpers   for *;
     using LZBridgeTesting for *;
 
+    uint32  constant ENDPOINT_ID_BASE = 30184;
+    address constant ENDPOINT_BASE    = 0x1a44076050125825900e736c501f859c50fE728c;
+
     IChainLog constant chainlog = IChainLog(0xdA0Ab1e0017DEbCd72Be8599041a2aa3bA7e740F);
 
     address govOappSender;
@@ -36,7 +39,7 @@ contract LZGovBridgeCrosschainTest is CrosschainTestBase {
         internal override returns (IPayload)
     {
         return IPayload(new LZGovBridgeCrosschainPayload(
-            LZGovBridgeForwarder.ENDPOINT_ID_BASE,
+            ENDPOINT_ID_BASE,
             govOappSender,
             _bridgeReceiver,
             targetPayload,
@@ -59,12 +62,12 @@ contract LZGovBridgeCrosschainTest is CrosschainTestBase {
         address govOwner = IGovOappSender(govOappSender).owner();
         vm.startPrank(govOwner);
         IGovOappSender(govOappSender).setPeer(
-            LZGovBridgeForwarder.ENDPOINT_ID_BASE,
+            ENDPOINT_ID_BASE,
             bytes32(uint256(uint160(expectedGovOappReceiver)))
         );
         IGovOappSender(govOappSender).setCanCallTarget(
             L1_SPARK_PROXY,
-            LZGovBridgeForwarder.ENDPOINT_ID_BASE,
+            ENDPOINT_ID_BASE,
             bytes32(uint256(uint160(expectedGovBridgeReceiver))),
             true
         );
@@ -78,7 +81,7 @@ contract LZGovBridgeCrosschainTest is CrosschainTestBase {
         govOappReceiver = new GovernanceOAppReceiverMock(
             LZGovBridgeForwarder.ENDPOINT_ID_ETHEREUM,
             bytes32(uint256(uint160(govOappSender))),
-            LZGovBridgeForwarder.ENDPOINT_BASE,
+            ENDPOINT_BASE,
             address(this)
         );
         assertEq(address(govOappReceiver), expectedGovOappReceiver);
