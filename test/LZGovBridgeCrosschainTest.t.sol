@@ -54,28 +54,6 @@ contract LZGovBridgeCrosschainTest is CrosschainTestBase {
         remote = getChain('base').createFork();
         bridge = LZBridgeTesting.createLZBridge(mainnet, remote);
 
-        uint256 nonce = vm.getNonce(address(this));
-        address expectedGovOappReceiver   = vm.computeCreateAddress(address(this), nonce);
-        address expectedGovBridgeReceiver = vm.computeCreateAddress(address(this), nonce + 1);
-
-        // Configure GovernanceOAppSender on mainnet
-        address govOwner = IGovOappSender(govOappSender).owner();
-        vm.startPrank(govOwner);
-        IGovOappSender(govOappSender).setPeer(
-            ENDPOINT_ID_BASE,
-            bytes32(uint256(uint160(expectedGovOappReceiver)))
-        );
-        IGovOappSender(govOappSender).setCanCallTarget(
-            L1_SPARK_PROXY,
-            ENDPOINT_ID_BASE,
-            bytes32(uint256(uint160(expectedGovBridgeReceiver))),
-            true
-        );
-        vm.stopPrank();
-
-        vm.deal(L1_SPARK_PROXY, 0.01 ether);
-
-        // Deploy destination contracts
         remote.selectFork();
 
         govOappReceiver = new GovernanceOAppReceiverMock(
@@ -84,16 +62,33 @@ contract LZGovBridgeCrosschainTest is CrosschainTestBase {
             ENDPOINT_BASE,
             address(this)
         );
-        assertEq(address(govOappReceiver), expectedGovOappReceiver);
 
-        // bridgeExecutor will be deployed at nonce+2 by super.setUp()
+        // bridgeExecutor will be the next contract deployed on this fork (by CrosschainTestBase.setUp())
+        address expectedExecutor = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
         bridgeReceiver = Deploy.deployLZGovBridgeReceiver({
             govOappReceiver : address(govOappReceiver),
             srcEid          : LZGovBridgeForwarder.ENDPOINT_ID_ETHEREUM,
             srcAuthority    : L1_SPARK_PROXY,
-            executor        : vm.computeCreateAddress(address(this), nonce + 2)
+            executor        : expectedExecutor
         });
-        assertEq(bridgeReceiver, expectedGovBridgeReceiver);
+
+        // Configure GovernanceOAppSender on mainnet
+        mainnet.selectFork();
+        address govOwner = IGovOappSender(govOappSender).owner();
+        vm.startPrank(govOwner);
+        IGovOappSender(govOappSender).setPeer(
+            ENDPOINT_ID_BASE,
+            bytes32(uint256(uint160(address(govOappReceiver))))
+        );
+        IGovOappSender(govOappSender).setCanCallTarget(
+            L1_SPARK_PROXY,
+            ENDPOINT_ID_BASE,
+            bytes32(uint256(uint160(bridgeReceiver))),
+            true
+        );
+        vm.stopPrank();
+
+        vm.deal(L1_SPARK_PROXY, 0.01 ether);
     }
 
     function relayMessagesAcrossBridge() internal override {
