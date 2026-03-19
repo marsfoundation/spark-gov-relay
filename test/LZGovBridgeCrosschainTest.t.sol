@@ -43,8 +43,7 @@ contract LZGovBridgeCrosschainTest is CrosschainTestBase {
             ENDPOINT_ID_BASE,
             govOappSender,
             _bridgeReceiver,
-            targetPayload,
-            _bridgeReceiver
+            targetPayload
         ));
     }
 

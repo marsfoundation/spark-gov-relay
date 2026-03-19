@@ -19,9 +19,8 @@ contract LZGovBridgeCrosschainPayload is CrosschainPayload {
         uint32   _dstEid,
         address  _govOapp,
         address  _receiver,
-        IPayload _targetPayload,
-        address  _bridgeReceiver
-    ) CrosschainPayload(_targetPayload, _bridgeReceiver) {
+        IPayload _targetPayload
+    ) CrosschainPayload(_targetPayload, address(0)) {
         dstEid  = _dstEid;
         govOapp = _govOapp;
         receiver = _receiver;
