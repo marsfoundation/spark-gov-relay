@@ -3,14 +3,12 @@ pragma solidity ^0.8.0;
 
 import './CrosschainTestBase.sol';
 
-import { LZBridgeTesting }                      from 'lib/xchain-helpers/src/testing/bridges/LZBridgeTesting.sol';
-import { LZGovBridgeForwarder }                  from 'lib/xchain-helpers/src/forwarders/LZGovBridgeForwarder.sol';
-
-import { Deploy } from '../deploy/Deploy.sol';
-
+import { LZBridgeTesting }            from 'lib/xchain-helpers/src/testing/bridges/LZBridgeTesting.sol';
+import { LZGovBridgeForwarder }       from 'lib/xchain-helpers/src/forwarders/LZGovBridgeForwarder.sol';
 import { GovernanceOAppReceiverMock } from 'lib/xchain-helpers/test/mocks/lz/GovernanceOAppReceiverMock.sol';
 
 import { LZGovBridgeCrosschainPayload } from './payloads/LZGovBridgeCrosschainPayload.sol';
+import { Deploy }                       from '../deploy/Deploy.sol';
 
 interface IChainLog {
     function getAddress(bytes32) external view returns (address);
