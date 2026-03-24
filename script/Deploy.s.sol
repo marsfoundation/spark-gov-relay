@@ -138,6 +138,8 @@ contract DeployLZGovBridgeExecutor is Script {
         console.log("executor deployed at:", executor);
         console.log("receiver deployed at:", receiver);
 
+        // Note: this does not grant a GUARDIAN_ROLE on the executor to anyone (same behaviour as the other scripts).
+        // That role should be set modifying the script or through a message.
         Deploy.setUpExecutorPermissions(executor, receiver, msg.sender);
 
         vm.stopBroadcast();
